@@ -1,0 +1,79 @@
+version: "3.7"
+services:
+  vault:
+    image: vault:latest
+    command: server
+    environment:
+      VAULT_LOCAL_CONFIG: '{"backend": {"file": {"path": "/vault/file"}}, "default_lease_ttl": "168h", "max_lease_ttl": "720h", "ui" : "true", "listener" : { "tcp" : { "address" : "0.0.0.0:8200", "tls_disable" : "true"  } } }'
+    cap_add:
+    - IPC_LOCK
+    ports:
+    - "8200:8200"
+    healthcheck:
+      test: ["CMD-SHELL", "test", "-f", "/vault/config/local.json"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+    - "./vault-data:/vault"
+    - "./vault-config:/vault/config"
+
+  vault-init-client:
+    command: ./vault-init/init-certificate-chain.sh
+    build:
+      context: ./vault-client/
+    cap_add:
+    - IPC_LOCK
+    depends_on:
+    - vault
+    environment:
+      VAULT_ADDR: 'http://vault:8200'
+      VAULT_FORMAT: 'table'
+    healthcheck:
+      test: ["CMD-SHELL", "test", "-f", "/cockroach-certs/roach3/node.key"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+    - "./vault-client:/vault-init"
+    - "./vault-token:/vault-token"
+    - "./cockroach-data:/cockroach-certs"
+
+  roach1:
+    image: cockroachdb/cockroach
+    entrypoint: /scripts/start-roach1.sh
+    depends_on:
+    - vault-init-client
+    ports:
+    - "8080:8080"
+    - "26257:26257"
+    volumes:
+      - "./cockroach-data/roach1:/cockroach/cockroach-data"
+      - "./cockroachdb:/scripts"
+
+  roach2:
+    image: cockroachdb/cockroach
+    entrypoint: /scripts/start-roach2.sh
+    depends_on:
+    - vault-init-client
+    volumes:
+    - "./cockroach-data/roach2:/cockroach/cockroach-data"
+    - "./cockroachdb:/scripts"
+
+  roach3:
+    image: cockroachdb/cockroach
+    entrypoint: /scripts/start-roach3.sh
+    depends_on:
+    - vault-init-client
+    volumes:
+    - "./cockroach-data/roach3:/cockroach/cockroach-data"
+    - "./cockroachdb:/scripts"
+
+  roach-client:
+    image: cockroachdb/cockroach
+    entrypoint: /scripts/create-dashboard-user.sh
+    depends_on:
+    - roach1
+    volumes:
+    - "./cockroach-data/roach-client:/cockroach/cockroach-data"
+    - "./cockroachdb:/scripts"
