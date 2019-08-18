@@ -1,4 +1,4 @@
-## HashiCorp Vault single instance and Cockroach DB secure 3-node cluster
+## HashiCorp Vault single instance and Cockroach DB 3-node cluster with Mutual TLS encryption
 
 This setup is NOT PRODUCTION READY! 
 
@@ -18,7 +18,7 @@ USERNAME: jpointsman
  
 PASSWORD Q7gc8rEdS
 
-By default CockroachDB will use the node certificate as the server certificate for the dashboard (you can [change](https://www.cockroachlabs.com/docs/stable/create-security-certificates-custom-ca.html#accessing-the-admin-ui-for-a-secure-cluster) this behaviour). You will be prompted by your browser because server certificate issued by HashiCorp Vault for the dasboard is not trusted by your browser. If you accept this warning and login you should see a 3-node database cluster without insecude warnings.
+By default CockroachDB will use the node certificate as the server certificate for the dashboard (you can [change](https://www.cockroachlabs.com/docs/stable/create-security-certificates-custom-ca.html#accessing-the-admin-ui-for-a-secure-cluster) this behaviour). You will be prompted by your browser because server certificate issued by HashiCorp Vault for the dasboard is not trusted by your browser. If you accept this warning and login you should see a 3-node database cluster without insecure warnings.
 
 ```bash
 open https://localhost:8080
