@@ -29,7 +29,7 @@ open https://localhost:8080
 TOKEN: on disk in ./vault-token/root.token
 
 ```bash
-open https://localhost:8200
+open http://localhost:8200
 ````
 
 ### Stop all docker instances
