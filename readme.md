@@ -32,6 +32,14 @@ TOKEN: on disk in ./vault-token/root.token
 open https://localhost:8200
 ````
 
+### Stop all docker instances
+
+You can stop all the docker containers:
+
+```bash
+docker-compose kill
+````
+
 ### CockroachDB considerations
 For a production-ready setup you should take at least the following into consideration:
 
