@@ -3,9 +3,11 @@
 This setup is NOT PRODUCTION READY! 
 
 It demonstrates how to use the Vault api to issue certificates for a secure CockroachDB cluster.
-From a CockroachDB perspective the in-transit encryption between cockroach nodes can be considered secure. However, the Vault instance is not configured in a secure way (see production considerations).
+From a CockroachDB perspective the in-transit encryption between CockroachDB nodes and SQL clients can be considered secure. However, the Vault instance is not configured in a secure way (see production considerations).
 
-To start the vault and cockroach db cluster:
+### Start the vault and cockroach db cluster
+
+Make sure you have no running process which binds on port 8200, 8080 or 26257
 
 ```bash
 docker-compose build
@@ -40,6 +42,35 @@ You can stop all the docker containers:
 docker-compose kill
 ````
 
+### Container Overview
+
+#### vault
+
+The official HashiCorp Vault Docker container running the Vault server on port 8200 with TLS disabled. The CA data, Intermediate CA data and all issued certificates are stored in this instance.  
+Vault is configured with the UI enabled and a filesystem storage backend. The config is stored in the /vault-config volume mapping. 
+The data and logs are available in the /vault-data volume mapping.
+
+#### vault-init-client
+
+A custom image based on the official HashiCorp Vault Docker container with jq and curl installed to simplify the extraction of certificates from vault API responses. This instance is responsible for using the Vault client to initialize and unseal the Vault server. Once it is unsealed it uses the root token to generate a CA, Intermediate CA and Digital Certificates for roach1, roach2, roach3 and roach-client. It shares the certificates with the other images through a shared Docker volume.
+
+#### roach1
+
+Standard CockroachDB Docker container without the join argument to automatically bootstrap the cluster. This node exposes the dashboard and sql server on port 8080 and 26257. Certificates are read from the /cockroach-data/roach1 volume mapping.
+
+#### roach2
+
+Standard CockroachDB Docker container with the join argument to automatically join the other nodes in the cluster. No ports are exposed to prevent a clash on the host. Certificates are read from the /cockroach-data/roach2 volume mapping.
+
+#### roach3
+
+Standard CockroachDB Docker container with the join argument to automatically join the other nodes in the cluster. No ports are exposed to prevent a clash on the host. Certificates are read from the /cockroach-data/roach3 volume mapping.
+
+#### roach-client
+
+Standard CockroachDB Docker container. Uses the CockroachDB client with the root account to create a Dashboard UI user. Certificates are read from the /cockroach-data/roach-client volume mapping.
+
+
 ### CockroachDB considerations
 For a production-ready setup you should take at least the following into consideration:
 
@@ -58,6 +89,6 @@ For a production-ready setup you should take at least the following into conside
 - You should run vault in [HA mode](https://learn.hashicorp.com/vault/operations/ops-vault-ha-consul) (with consul)
 - You should backup your vault
 - You should make a plan for rotating your intermediate CA
-- You should make a plan and monitor and [alert](https://github.com/cockroachdb/cockroach/blob/ca8fa726de54a0feea9f33ad000e883a4168ef39/monitoring/rules/alerts.rules.yml#L91) for cockroachdb expiring certificates
+- You should make a plan and monitor and [alert](https://github.com/cockroachdb/cockroach/blob/ca8fa726de54a0feea9f33ad000e883a4168ef39/monitoring/rules/alerts.rules.yml#L91) for CockroachDB expiring certificates
 - You should revoke certificates that are not used anymore
 - Consider using an existing CA to sign your intermediate CA instead of generating one with Vault
