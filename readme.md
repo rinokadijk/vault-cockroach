@@ -34,6 +34,14 @@ TOKEN: on disk in ./vault-token/root.token
 open http://localhost:8200
 ````
 
+### Use the client certificate for user jpointsman to show databases 
+
+Don't stop the docker-compose command and run the following command in a separate terminal:
+
+```bash
+docker-compose run roach-client sql --user=jpointsman --execute="show databases;"
+````
+
 ### Stop all docker instances
 
 You can stop all the docker containers:

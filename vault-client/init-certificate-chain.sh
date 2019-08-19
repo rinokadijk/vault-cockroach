@@ -89,4 +89,10 @@ cat /cockroach-certs/vault_response.json | jq -r .data.certificate > /cockroach-
 cat /cockroach-certs/vault_response.json | jq -r .data.private_key > /cockroach-certs/roach-client/client.root.key
 chmod 0600 /cockroach-certs/roach-client/client.root.key
 
+echo generating new certificate for jpointsman user
+vault write -format=json pki_int/issue/example-dot-com common_name="jpointsman" ttl="24h" > /cockroach-certs/vault_response.json
+cat /cockroach-certs/vault_response.json | jq -r .data.certificate > /cockroach-certs/roach-client/client.jpointsman.crt
+cat /cockroach-certs/vault_response.json | jq -r .data.private_key > /cockroach-certs/roach-client/client.jpointsman.key
+chmod 0600 /cockroach-certs/roach-client/client.jpointsman.key
+
 rm /cockroach-certs/vault_response.json

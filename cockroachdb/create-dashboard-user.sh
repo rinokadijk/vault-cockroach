@@ -8,10 +8,12 @@ do
     sleep 5
 done
 
-while /cockroach/cockroach.sh node status --host=roach1 --certs-dir=/cockroach/cockroach-data; ret=$? ; [ $ret -ne 0 ];do
-    echo Waiting for http://roach1:8080/ to be up...
+while /cockroach/cockroach.sh node status; ret=$?; [ $ret -ne 0 ];do
+    echo Waiting ${COCKROACH_HOST} to be up...
     sleep 5
 done
 
-/cockroach/cockroach.sh sql --host=roach1 --certs-dir=/cockroach/cockroach-data --execute="CREATE USER IF NOT EXISTS jpointsman WITH PASSWORD 'Q7gc8rEdS';"
+/cockroach/cockroach.sh sql --execute="CREATE USER IF NOT EXISTS jpointsman WITH PASSWORD 'Q7gc8rEdS';
+CREATE DATABASE IF NOT EXISTS jpointsmandb;
+GRANT ALL ON DATABASE jpointsmandb TO jpointsman;"
 

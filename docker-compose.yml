@@ -71,7 +71,10 @@ services:
 
   roach-client:
     image: cockroachdb/cockroach
-    entrypoint: /scripts/create-dashboard-user.sh
+    command: shell /scripts/create-dashboard-user.sh
+    environment:
+      COCKROACH_HOST: roach1
+      COCKROACH_CERTS_DIR: /cockroach/cockroach-data
     depends_on:
     - roach1
     volumes:
