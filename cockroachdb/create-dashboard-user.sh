@@ -13,7 +13,7 @@ while /cockroach/cockroach.sh node status; ret=$?; [ $ret -ne 0 ];do
     sleep 5
 done
 
-/cockroach/cockroach.sh sql --execute="CREATE USER IF NOT EXISTS jpointsman WITH PASSWORD 'Q7gc8rEdS';
+exec /cockroach/cockroach.sh sql --execute="CREATE USER IF NOT EXISTS jpointsman WITH PASSWORD 'Q7gc8rEdS';
 CREATE DATABASE IF NOT EXISTS jpointsmandb;
 GRANT ALL ON DATABASE jpointsmandb TO jpointsman;"
 

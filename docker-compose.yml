@@ -41,7 +41,7 @@ services:
 
   roach1:
     image: cockroachdb/cockroach
-    entrypoint: /scripts/start-roach1.sh
+    command: shell /scripts/start-roach1.sh
     depends_on:
     - vault-init-client
     ports:
@@ -53,7 +53,7 @@ services:
 
   roach2:
     image: cockroachdb/cockroach
-    entrypoint: /scripts/start-roach2.sh
+    command: shell /scripts/start-roach2.sh
     depends_on:
     - vault-init-client
     volumes:
@@ -62,7 +62,7 @@ services:
 
   roach3:
     image: cockroachdb/cockroach
-    entrypoint: /scripts/start-roach3.sh
+    command: shell /scripts/start-roach3.sh
     depends_on:
     - vault-init-client
     volumes:

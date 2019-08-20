@@ -8,5 +8,5 @@ do
     sleep 2
 done
 
-/cockroach/cockroach.sh start --certs-dir=/cockroach/cockroach-data --advertise-addr=roach1 --log-dir=/cockroach/cockroach-data/logs/
+exec /cockroach/cockroach.sh start --certs-dir=/cockroach/cockroach-data --advertise-addr=roach1 --log-dir=/cockroach/cockroach-data/logs/
 

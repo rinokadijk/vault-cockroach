@@ -12,7 +12,7 @@ Make sure you have no running process which binds on port 8200, 8080 or 26257
 ```bash
 docker-compose build
 docker-compose up
-````
+```
 
 ### Open CockraochDB UI
 
@@ -24,7 +24,7 @@ By default CockroachDB will use the node certificate as the server certificate f
 
 ```bash
 open https://localhost:8080
-````
+```
 
 ### Open Vault UI
 
@@ -32,7 +32,7 @@ TOKEN: on disk in ./vault-token/root.token
 
 ```bash
 open http://localhost:8200
-````
+```
 
 ### Use the client certificate for user jpointsman to show databases 
 
@@ -40,7 +40,27 @@ Don't stop the docker-compose command and run the following command in a separat
 
 ```bash
 docker-compose run roach-client sql --user=jpointsman --execute="show databases;"
-````
+```
+
+### Renew certificate
+
+To renew all the certificates run the following command in a separate terminal:
+
+```bash
+docker-compose up -d vault-init-client
+```
+
+To reload the certificates without downtime run the following command:
+
+```bash
+docker-compose kill -s SIGHUP roach1 roach2 roach3
+```
+
+Check the certificate dates with the following command:
+
+```bash
+echo | openssl s_client -connect localhost:26257 2>/dev/null | openssl x509 -noout -dates
+```
 
 ### Stop all docker instances
 
