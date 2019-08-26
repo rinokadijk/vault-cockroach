@@ -207,7 +207,7 @@ jdbc:postgresql://roach1:26257/jpointsmandb?user=jpointsman&sslcert=path%to%2Fcl
 &sslmode=require&ssl=true&ApplicationName=myapp
 ```
 
-## Renewing your certificates
+## Renewing certificates
 
 Renewing your node and client certificates is really easy. To renew all the certificates run the following command:
 
