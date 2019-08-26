@@ -5,7 +5,7 @@ By default CockroachDB (CRDB) uses digital certificates for authentication. Hash
 ## CRDB
 
 #### Single instance Postgres
-You could run just a single instance postgres database. Assuming you regularly take your backups and the Recovery Point Objective (RPO) and the Recovery Point Objective (RPO) are low, this might be your best solution. It is easy and simple to manage. However, that doesn't give high availability while upgrading your kernel or your database during maintenance. Worse, downtime is inevitable in case of a failure. 
+You could run just a single instance Postgres database. Assuming you regularly take your backups and the Recovery Point Objective (RPO) and the Recovery Point Objective (RPO) are low, this might be your best solution. It is easy and simple to manage. However, it doesn't give high availability while upgrading your kernel or your database during maintenance. Worse, downtime is inevitable in case of a failure. 
 
 #### HA Postgres
 Postgres has a number of ways to make it highly [available](https://www.postgresql.org/docs/9.1/different-replication-solutions.html) all with different trade-offs. Most of the solutions rely on the network and assume there is only one master node at any point in time. Furthermore, these solutions don't cover the ["split-brain" problem](https://landing.google.com/sre/sre-book/chapters/managing-critical-state/). It requires a human to correctly decide whether or not a failover should take place to prevent having two master nodes running. Some solutions loose data in the event of a failover. In CRDB every node is a master and it can handle a split-brain scenario using the Raft protocol.
