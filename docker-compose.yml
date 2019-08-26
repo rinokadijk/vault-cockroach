@@ -80,3 +80,13 @@ services:
     volumes:
     - "./cockroach-data/roach-client:/cockroach/cockroach-data"
     - "./cockroachdb:/scripts"
+
+  go-client:
+    depends_on:
+    - roach1
+    ports:
+    - "8090:8080"
+    build:
+      context: ./go-client/
+    volumes:
+    - "./cockroach-data/roach-client:/cockroach/cockroach-data"

@@ -42,6 +42,12 @@ Don't stop the docker-compose command and run the following command in a separat
 docker-compose run roach-client sql --user=jpointsman --execute="show databases;"
 ```
 
+Or use the go-client to connect to the database with a client certificate in a separate terminal:
+
+```bash
+docker-compose run go-client
+```
+
 ### Renew certificate
 
 To renew all the certificates run the following command in a separate terminal:
