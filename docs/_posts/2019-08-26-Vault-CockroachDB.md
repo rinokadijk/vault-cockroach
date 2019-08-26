@@ -1,6 +1,6 @@
 # Managing CockroachDB certificates with HashiCorp Vault
 
-By default CockroachDB (CRDB) uses digital certificates for authentication. HashiCorp Vault makes the process of issuing, renewing and revoking certificates a lot easier. Both tools are designed for a cloud environment. If you like reading code more than you like reading blogs then I recommend cloning the [git repository](https://github.com/rinokadijk/vault-cockroach)
+By default CockroachDB (CRDB) uses digital certificates for authentication. Digital certificates in general provide stronger authentication and fit into the “3 Rs” of enterprise security: Repair, Repave, and Rotate. HashiCorp Vault makes the process of issuing, renewing and revoking certificates a lot easier. Both tools are designed for a cloud environment. If you like reading code more than you like reading blogs then I recommend cloning the [git repository](https://github.com/rinokadijk/vault-cockroach)
 
 ## CRDB
 
