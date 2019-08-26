@@ -1,0 +1,9 @@
+title: Vault CockroachDB
+description: Managing CockroachDB certificates with HashiCorp Vault
+github_username:  rinokadijk
+
+markdown: kramdown
+kramdown:
+  input: GFM
+
+excerpt_separator: <!--description-->
