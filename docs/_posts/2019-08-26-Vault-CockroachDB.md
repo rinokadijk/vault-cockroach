@@ -181,7 +181,9 @@ certs-dir/
 
 To be able to query the database we have to create a new user and grant access to a database. The common_name for an SQL client must match the username. It is highly recommended that your application supports rolling upgrades (or at least can reload the certificate without downtime) because of the expiration date on the certificate. The following command generates a new certificate and key for the user jpointsman:
 
+```bash
 vault write -format=json pki_int/issue/example-dot-com common_name="jpointsman" ttl="24h"
+```
 
 For the CRDB client the certificates should have the names corresponding to the username with a "client." prefix. The directory layout of the certs-dir for every node must be:
 
