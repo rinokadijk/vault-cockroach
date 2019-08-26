@@ -132,7 +132,7 @@ vault write pki/config/urls \
            crl_distribution_points="http://127.0.0.1:8200/v1/pki/crl"
 ```
 
-The crl_distribution_points property indicates that the certificate revocation list will be published on /v1/pki/crl. If you point your browser to http://localhost:8200/v1/pki/crl you will receive a list of all the certificates that have been revoked. Next, we have to create a separate secret engine to issue certificates with a max TTL of 5 years in order to provide CRDB with the Intermediate CA certificate, a node certificate and its corresponding private key. Jq is used to extract the certificate signing request (CSR):
+The crl_distribution_points property indicates that the certificate revocation list will be published on /v1/pki/crl. If you point your browser to [http://localhost:8200/v1/pki/crl](http://localhost:8200/v1/pki/crl) you will receive a list of all the certificates that have been revoked. Next, we have to create a separate secret engine to issue certificates with a max TTL of 5 years in order to provide CRDB with the Intermediate CA certificate, a node certificate and its corresponding private key. Jq is used to extract the certificate signing request (CSR):
 
 ```bash
 vault write -format=json pki_int/intermediate/generate/internal \
