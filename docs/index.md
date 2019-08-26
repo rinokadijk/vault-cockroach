@@ -9,44 +9,44 @@ comments: true
 
 # Managing CockroachDB certificates with HashiCorp Vault
 
-By default CockroachDB uses digital certificates for authentication. HashiCorp Vault makes the process of issuing, renewing and revoking certificates a lot easier. Both tools are designed for a cloud environment. If you like reading code more than you like reading blogs then I recommend cloning the git repository: https://github.com/rinokadijk/vault-cockroach
+By default CockroachDB uses digital certificates for authentication. HashiCorp Vault makes the process of issuing, renewing and revoking certificates a lot easier. Both tools are designed for a cloud environment. If you like reading code more than you like reading blogs then I recommend cloning the [git repository](https://github.com/rinokadijk/vault-cockroach)
 
-## Why CockroachDB is awesome
+## CockroachDB
 
 #### Single instance Postgres
 You could run just a single instance postgres database. Assuming you regularly take your backups and the Recovery Point Objective (RPO) and the Recovery Point Objective (RPO) are low, this might be your best solution. It is easy and simple to manage. However, that doesn't give high availability while upgrading your kernel or your database during maintenance. Worse, downtime is inevitable in case of a failure. 
 
 #### HA Postgres
-Postgres has a number of ways to make it highly available all with different trade-offs (https://www.postgresql.org/docs/9.1/different-replication-solutions.html). Most of the solutions rely on the network and assume there is only one master node at any point in time. Furthermore, these solutions don't cover the "split-brain" problem (https://landing.google.com/sre/sre-book/chapters/managing-critical-state/). It requires a human to correctly decide whether or not a failover should take place to prevent having two master nodes running. Some solutions loose data in the event of a failover. In CockroachDB every node is a master and it can handle a split-brain scenario using the Raft protocol.
+Postgres has a number of ways to make it highly [available](https://www.postgresql.org/docs/9.1/different-replication-solutions.html) all with different trade-offs. Most of the solutions rely on the network and assume there is only one master node at any point in time. Furthermore, these solutions don't cover the ["split-brain" problem](https://landing.google.com/sre/sre-book/chapters/managing-critical-state/). It requires a human to correctly decide whether or not a failover should take place to prevent having two master nodes running. Some solutions loose data in the event of a failover. In CockroachDB every node is a master and it can handle a split-brain scenario using the Raft protocol.
 
 #### Pets vs Cattle
-In a cloud environment we should treat our nodes as cattle as much as possible. Cattle is easy to scale and doesn't require special treatment for specific servers. A database server that assumes one master node, implies that these servers need to be treated as pets. In CockroachDB every node is a master. Your queries can be distributed across all of the nodes in the cluster. This means that adding more nodes to the cluster increases capacity, speed and reliability. It does force you to plan for data-locality to prevent high latency. CockroachDB is not a silver bullet. The devs at Cockroachlabs also make trade-offs to be able to scale the database over multiple regions. Some of the features of a traditional database simply don't scale and might never be supported. Fortunately there is very good documentation on which features will and won't be supported (https://www.cockroachlabs.com/docs/stable/detailed-sql-support.html).
+In a cloud environment we should treat our nodes as cattle as much as possible. Cattle is easy to scale and doesn't require special treatment for specific servers. A database server that assumes one master node, implies that these servers need to be treated as pets. In CockroachDB every node is a master. Your queries can be distributed across all of the nodes in the cluster. This means that adding more nodes to the cluster increases capacity, speed and reliability. It does force you to plan for data-locality to prevent high latency. CockroachDB is not a silver bullet. The devs at Cockroachlabs also make trade-offs to be able to scale the database over multiple regions. Some of the features of a traditional database simply don't scale and might never be supported. Fortunately there is very good documentation on which [features](https://www.cockroachlabs.com/docs/stable/detailed-sql-support.html) will and won't be supported.
 
 #### RPO and RTO
-CockroachDB is designed to have an RTO of 4.5 seconds in the event of a disk failure or datacenter-level disaster (https://www.cockroachlabs.com/blog/demand-zero-rpo/). By default CockroachDB holds 24 hours of every table history in the system and you can query that data using time-travel (https://www.cockroachlabs.com/blog/time-travel-queries-select-witty_subtitle-the_future/). This allows you to read the data at a certain recovery point in time with the "AS OF SYSTEM TIME" SQL query syntax.
+CockroachDB is designed to have an [RTO](https://www.cockroachlabs.com/blog/demand-zero-rpo/) of 4.5 seconds in the event of a disk failure or datacenter-level disaster. By default CockroachDB holds 24 hours of every table history in the system and you can query that data using [time-travel](https://www.cockroachlabs.com/blog/time-travel-queries-select-witty_subtitle-the_future/). This allows you to read the data at a certain recovery point in time with the "AS OF SYSTEM TIME" SQL query syntax.
 
 #### CockroachDB Features
 Besides the availability, CockroachDB has a couple of unique features. These are my personal favourites:
 
 - Very good documentation on how to operate and migrate a database cluster
 - A dashboard with near-realtime performance statistics of your SQL queries
-- Zipkin and Jaeger traces (https://wiki.crdb.io/wiki/spaces/CRDB/pages/73171339/Tracing+logs+with+Jaeger+and+Zipkin)
+- Zipkin and Jaeger [traces](https://wiki.crdb.io/wiki/spaces/CRDB/pages/73171339/Tracing+logs+with+Jaeger+and+Zipkin)
 - Zero-downtime rolling database upgrades
 - Support for multi-cloud / multi-region / on-prem deployments
 - Change Data Capture to stream database changes via WAL to a Kafka cluster
-- A LOT of prometheus metrics and preconfigured alerts (https://github.com/cockroachdb/cockroach/blob/master/cloud/kubernetes/prometheus/alert-rules.yaml)
+- A LOT of prometheus metrics and preconfigured [alerts](https://github.com/cockroachdb/cockroach/blob/master/cloud/kubernetes/prometheus/alert-rules.yaml)
 - Spring Data JPA support
 - Flywaydb support
 - Blazing fast startup time for the CockroachDB Docker image
-- JUnit runner (https://github.com/Melozzola/cockroachdb-dev-test)
+- [JUnit runner](https://github.com/Melozzola/cockroachdb-dev-test)
 
 ## How CockroachDB authentication works
 
-By default CockroachDB uses digital certificates instead of a username and password for authentication. Digital certificate are considered less vulnerable to phishing, keystroke logging and man-in-the-middle (MITM) attacks (https://blog.couchbase.com/x-509-certificate-based-authentication/). CockroachDB has three entry points that require authentication:
+By default CockroachDB uses digital certificates instead of a username and password for authentication. Digital certificate are considered less vulnerable to phishing, keystroke logging and man-in-the-middle (MITM) [attacks](https://blog.couchbase.com/x-509-certificate-based-authentication/). CockroachDB has three entry points that require authentication:
 
 **An SQL client querying one or more databases it was granted access to**
 
-CockroachDB recommends using digital certificates to authenticate users. However, it is still possible to authenticate systems / users with username and password. By default a TLS 1.2 connection will be used to authenticate the database client on port 26257. This is compatible with the Postgres wire protocol (https://www.postgresql.org/docs/10/auth-methods.html#AUTH-CERT).
+CockroachDB recommends using digital certificates to authenticate users. However, it is still possible to authenticate systems / users with username and password. By default a TLS 1.2 connection will be used to authenticate the database client on port 26257. This is compatible with the Postgres [wire protocol](https://www.postgresql.org/docs/10/auth-methods.html#AUTH-CERT).
 
 **A user accessing the Admin UI dashboard**
 
@@ -62,13 +62,13 @@ Digital certificates are verified using a chain of trust. The trust anchor for t
 
 **Use an existing CA** if your company already has one. Digital certificates are signed with a private key. When using an existing CA, the third party or system is responsible for safely storing the private key to issue the digital certificates. When you want a new client to access the CockroachDB cluster, you should create a certificate with the correct properties and send a Certificate Signing Request (CSR) to the existing CA. The existing CA should respond with a digitally signed client certificate that can be used for authentication.
 
-## Where HashiCorp Vault comes in
+## HashiCorp Vault
 
-Issuing and rotating digital certificates can be a painful proces. This might lead to long-lived certificates to postpone the pain of renewing or rotating them. Some developers will tell you "if it hurts, do it more often" (https://www.martinfowler.com/bliki/FrequencyReducesDifficulty.html). I consider this to also be true for issuing digital certificates. Vault allows you to automate a lot of the procedures around issuing, renewing and revoking digital certificates. This has the added benefit that you can respond quickly in the case of an emergency or when a certificate expires. Short-lived, single-purpose secrets generally reduce the attack surface of your infrastructure.
+Issuing and rotating digital certificates can be a painful proces. This might lead to long-lived certificates to postpone the pain of renewing or rotating them. Some developers will tell you ["if it hurts, do it more often"](https://www.martinfowler.com/bliki/FrequencyReducesDifficulty.html). I consider this to also be true for issuing digital certificates. Vault allows you to automate a lot of the procedures around issuing, renewing and revoking digital certificates. This has the added benefit that you can respond quickly in the case of an emergency or when a certificate expires. Short-lived, single-purpose secrets generally reduce the attack surface of your infrastructure.
 
 Vault can handle different types of secrets like passwords, SSH keys, database credentials and certificates. It simplifies a lot of the operational burden when it comes to issuing, rotating and retrieving secrets. In the CockroachDB use-case both an SQL client and a database node can have multiple certificates. Certificates expire and in some cases they need to be revoked. Vault keeps a database of all the certificates it has issued. You can can use this database to batch operations like revoking specific certificates. The tool also provides an audit log to track abuse and detect anomaly patterns. 
 
-The PKI secrets engine can integrate with your existing CA. It can also act as an intermediate CA. This allows you to delegate the issuing, revocation (https://github.com/cockroachdb/cockroach/issues/29641), rotation and expiration of the database credentials to Vault. The tool integrates with existing authentication and authorization protocols, which allows you to mix and match. For example, you could use LDAP authentication to grant a database client access to a database. It provides a standardised API to support short-lived secrets. The following steps will show you how to generate the certificates for CockroachDB database nodes.
+The PKI secrets engine can integrate with your existing CA. It can also act as an intermediate CA. This allows you to delegate the issuing, [revocation](https://github.com/cockroachdb/cockroach/issues/29641), rotation and expiration of the database credentials to Vault. The tool integrates with existing authentication and authorization protocols, which allows you to mix and match. For example, you could use LDAP authentication to grant a database client access to a database. It provides a standardised API to support short-lived secrets. The following steps will show you how to generate the certificates for CockroachDB database nodes.
 
 ## Demo time
 
@@ -202,8 +202,10 @@ certs-dir/
 
 If you use a JDBC connection string for a Java application you still have to convert the certificates to PKCS8 format. The following 2 commands will convert the certificates to files that can be used in a JDBC connection string:
 
+```bash
 openssl x509 -in client.jpointsman.crt -inform pem -outform der -out client.jpointsman.der
 openssl pkcs8 -topk8 -inform PEM -outform DER -in client.jpointsman.key -out client.jpointsman.key.pk8 -nocrypt
+```
 
 You should provide the full url-encoded path to the certificate and key in the JDBC connection string. I highly recommend using the ApllcationName in the JDBC string. This will group the queries in the CockroachDB dashboard by application. A JDBC connection string would then look something like:
 
