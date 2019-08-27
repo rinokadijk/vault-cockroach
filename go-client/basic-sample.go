@@ -16,6 +16,7 @@ const (
 	sslrootcert = "/cockroach/cockroach-data/ca.crt"
 	sslkey      = "/cockroach/cockroach-data/client.jpointsman.key"
 	sslcert     = "/cockroach/cockroach-data/client.jpointsman.crt"
+	appname     = "go-client"
 )
 
 var (
@@ -24,8 +25,8 @@ var (
 
 func main() {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"dbname=%s sslmode=require ssl=true sslrootcert=%s sslkey=%s sslcert=%s",
-		host, port, user, dbname, sslrootcert, sslkey, sslcert)
+		"dbname=%s sslmode=require ssl=true sslrootcert=%s sslkey=%s sslcert=%s application_name=%s",
+		host, port, user, dbname, sslrootcert, sslkey, sslcert, appname)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
