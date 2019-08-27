@@ -63,7 +63,9 @@ The PKI secrets engine can integrate with your existing CA. It can also act as a
 
 ## Demo time
 
-A docker-compose file is used to start a vault and a cockroach cluster:
+<a href="url"><img src="{{site.baseurl}}/assets/img/chainoftrust.png" align="left" width="200" alt="chain of trust></a> 
+
+The above image shows the chain of trust for the demo setup. A docker-compose file is used to start a vault and a cockroach cluster:
 
 ```bash
 git clone https://github.com/rinokadijk/vault-cockroach.git
