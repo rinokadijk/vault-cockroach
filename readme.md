@@ -104,6 +104,9 @@ Standard CockroachDB Docker container with the join argument to automatically jo
 
 Standard CockroachDB Docker container. Uses the CockroachDB client with the root account to create a Dashboard UI user. Certificates are read from the /cockroach-data/roach-client volume mapping.
 
+#### go-client
+
+Uses the golang sql library with the jpointsman account show the databases for this user. Certificates are read from the /cockroach-data/roach-client volume mapping.
 
 ### CockroachDB considerations
 For a production-ready setup you should take at least the following into consideration:
