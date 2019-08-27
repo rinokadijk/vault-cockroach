@@ -78,7 +78,7 @@ The docker-compose file starts 1 Vault node in server mode and 3 CRDB nodes in s
 
 ![container overview]({{ site.baseurl }}/assets/img/containeroverview.png)
 
-In this example the client containers (vault-init-client and roach-client) are responsible for generating and distributing the certificates Docker through volume mappings. In a production setup it might be more convenient to extend the CRDB container with logic to request new certificates and revoke old certificates. Most of the logic in the example is in the vault-init-client container. It is responsible for bootstrapping the Vault container and initialising the PKI secrets engine.
+In this example the client containers (vault-init-client and roach-client) are responsible for generating and distributing the certificates through Docker volumes. In a production setup it might be more convenient to extend the CRDB container with logic to request new certificates and revoke old certificates. Most of the logic in the example is in the vault-init-client container. It is responsible for bootstrapping the Vault container and initialising the PKI secrets engine.
 
 **vault**
 
