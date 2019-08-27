@@ -5,7 +5,7 @@ By default CockroachDB (CRDB) uses digital certificates for authentication. Digi
 ## CRDB
 
 #### Single instance Postgres
-You could run just a single instance Postgres database. Assuming you regularly take your backups and the Recovery Point Objective (RPO) and the Recovery Point Objective (RPO) are low, this might be your best solution. It is easy and simple to manage. However, it doesn't give high availability while upgrading your kernel or your database during maintenance. Worse, downtime is inevitable in case of a failure. 
+You could just run a single instance Postgres database. Assuming you regularly perform a backup and the Recovery Point Objective (RPO) and the Recovery Point Objective (RPO) are low, this might be your best solution. It is easy and simple to manage. However, it doesn't give high availability while upgrading your kernel or your database during maintenance. Worse, downtime is inevitable in case of a failure. 
 
 #### HA Postgres
 Postgres has a number of ways to make it highly [available](https://www.postgresql.org/docs/9.1/different-replication-solutions.html) all with different trade-offs. Most of the solutions rely on the network and assume there is only one master node at any point in time. Furthermore, these solutions don't cover the ["split-brain" problem](https://landing.google.com/sre/sre-book/chapters/managing-critical-state/). It requires a human to correctly decide whether or not a failover should take place to prevent having two master nodes running. Some solutions loose data in the event of a failover. In CRDB every node is a master and it can handle a split-brain scenario using the Raft protocol.
@@ -22,13 +22,13 @@ Besides the availability, CRDB has a couple of unique features. These are my per
 - Very good documentation on how to operate and migrate a database cluster
 - A dashboard with near-realtime performance statistics of your SQL queries
 - Zipkin and Jaeger [traces](https://wiki.crdb.io/wiki/spaces/CRDB/pages/73171339/Tracing+logs+with+Jaeger+and+Zipkin)
-- Zero-downtime rolling database upgrades
+- Runs on [Kubernetes](https://www.cockroachlabs.com/docs/v19.1/orchestrate-cockroachdb-with-kubernetes.html) and [Mesos](https://github.com/cockroachdb/dcos-cockroachdb-service)
 - Support for multi-cloud / multi-region / on-prem deployments
 - Change Data Capture to stream database changes via WAL to a Kafka cluster
 - A LOT of prometheus metrics and preconfigured [alerts](https://github.com/cockroachdb/cockroach/blob/master/cloud/kubernetes/prometheus/alert-rules.yaml)
 - Spring Data JPA support
 - Flywaydb support
-- Blazing fast startup time for the CRDB Docker image
+- Blazing fast startup time for the CRDB Docker image for local-development
 - [JUnit runner](https://github.com/Melozzola/cockroachdb-dev-test)
 
 ## How CRDB authentication works
@@ -41,7 +41,7 @@ CRDB recommends using digital certificates to authenticate users. However, it is
 
 **A user accessing the Admin UI dashboard**
 
-By default the dashboard can be accessed over an HTTPS connection on port 443. You can provide the cockroach binary with a server certificate for the HTTPS connection. If the ApplicationName property is used in the Postgres connection sting, then the dashboard will split the query latency per connection. Some tools like IntelliJ IDEA will identify itself with the ApplicationName in the connection string. This makes debugging and analysis a lot easier. By default users are created without a password. You have to create a password for every user / system that is authorised access to the dashboard. The same user account is used for querying the system and accessing the dashboard. Once authenticated, the user can only see information about the databases it was granted access to.
+By default the dashboard can be accessed over an HTTPS connection on port [8080](https://localhost:8080). You can provide the cockroach binary with a server certificate for the HTTPS connection. If the ApplicationName property is used in the Postgres connection sting, then the dashboard will split the query latency per connection. Some tools like IntelliJ IDEA will identify itself with the ApplicationName in the connection string. This makes debugging and analysis a lot easier. By default users are created without a password. You have to create a password for every user / system that is authorised access to the dashboard. The same user account is used for querying the system and accessing the dashboard. Once authenticated, the user can only see information about the databases it was granted access to.
 
 **A database node joining a cluster**
 
@@ -49,7 +49,7 @@ If you run a secure cluster, a new node needs to authenticate itself with digita
 
 Digital certificates are verified using a chain of trust. The trust anchor for the digital certificate is the root certificate authority (CA). Your browser ships with a couple of predefined CA's that you could use to issue a client certificate. However, it would be tedious to manually request a client certificate every you want a node to join the cluster (or the certificate for the node expires). It becomes really annoying when every new SQL client needs a certificate. To automate this process there are two options:
 
-**The cockroach cert command** can be used to create a chain of trust. You could you the openssl command to generate all the client certificates. In practice it's a lot easier to use the cockroach cert create-ca, cockroach cert create-node and cockroach cert create-client commands to automate this process. These commands provide the properties on the certificates that are required by a cockroach cluster to authenticate. All of these commands require you to have the CA certificate and private key present when issuing a certificate. In general it is not considered a good practice moving the private key of the CA around your infrastructure.
+**The cockroach cert command** can be used to create a chain of trust. You could use openssl to generate all the client certificates. In practice it's a lot easier to use the <span style="color: #9e9e9e">cockroach cert create-ca</span>, <span style="color: #9e9e9e">cockroach cert create-node</span> and <span style="color: #9e9e9e">cockroach cert create-client</span> commands to automate this process. These commands provide the properties on the certificates that are required by a cockroach cluster to authenticate. All of these commands require you to have the CA certificate and private key present when issuing a certificate. In general it is not considered a good practice moving the private key of the CA around your infrastructure.
 
 **Use an existing CA** if your company already has one. Digital certificates are signed with a private key. When using an existing CA, the third party or system is responsible for safely storing the private key to issue the digital certificates. When you want a new client to access the CRDB cluster, you should create a certificate with the correct properties and send a Certificate Signing Request (CSR) to the existing CA. The existing CA should respond with a digitally signed client certificate that can be used for authentication.
 
@@ -74,9 +74,11 @@ docker-compose build
 docker-compose up
 ```
 
-The docker-compose file starts 1 Vault node in server mode and 3 CRDB nodes in server mode. The CRDB nodes discover each other through the docker network bridge (hostname: roach1, roach2 and roach3). Both the Vault and CRDB binary implement a server as well as a client. The vault-init-client container and roach-client container are running in client mode. 
+The docker-compose file starts 1 Vault node in server mode and 3 CRDB nodes in server mode. The CRDB nodes discover each other through the docker network bridge (hostname: roach1, roach2 and roach3). Both the Vault and CRDB binary implement a server as well as a client. The vault-init-client container and roach-client container are running in client mode. The following diagram shows the relation between the containers in the example.
 
-In this example the client containers (vault-init-client and roach-client) are responsible for generating and distributing the certificates Docker through volume mappings. In a production setup it might be more convenient to extend the CRDB container with logic to request new certificates and revoke old certificates. Most of the logic in the example is in the vault-init-client container. It is responsible for bootstrapping the Vault container and initialising the PKI 
+![container overview]({{ site.baseurl }}/assets/img/containeroverview.png)
+
+In this example the client containers (vault-init-client and roach-client) are responsible for generating and distributing the certificates Docker through volume mappings. In a production setup it might be more convenient to extend the CRDB container with logic to request new certificates and revoke old certificates. Most of the logic in the example is in the vault-init-client container. It is responsible for bootstrapping the Vault container and initialising the PKI secrets engine.
 
 **vault**
 
@@ -84,7 +86,7 @@ The official HashiCorp Vault Docker container running the Vault server on port 8
 
 **roach1, roach2 and roach3**
 
-The official CRDB Docker containers. A shell script waits for the CA.crt to become available before stating a cluster with the --secure and --join argument. The --join argument is used to discover the other CRDB nodes. The roach1 node is not provided a --join argument to init the cluster immediately. However, in a production scenario you must provide the --join argument for all nodes and explicitly trigger the init command to bootstrap the cluster. If you forget to add the --join argument, the node might act as if it were a single node cluster on reboot. 
+The official CRDB Docker containers. A shell script waits for the CA.crt to become available before starting a cluster with the <span style="color: #9e9e9e">--secure</span> and <span style="color: #9e9e9e">--join</span> argument. The <span style="color: #9e9e9e">--join</span> argument is used to discover the other CRDB nodes. The roach1 node is not provided a <span style="color: #9e9e9e">--join</span> argument to init the cluster immediately. However, in a production scenario you must provide the <span style="color: #9e9e9e">--join</span> argument for all nodes and explicitly trigger the init command to bootstrap the cluster. If you forget to add the <span style="color: #9e9e9e">--join</span> argument, the node might act as if it were a single node cluster on reboot. 
 
 You should also consider using something like Consul Template to discover and configure your nodes as cattle. The roach1 node exposes the dashboard and sql server on port 8080 and 26257. The other nodes don't expose any ports to avoid clashes. In a production scenario you would expose port 8080 and 26257 and use a load balancer to distribute load across all nodes. The certificates are generated by the vault-init-client container and shared through a Docker volume (/cockroach-data/roachX). Certificates are read from the Docker volume.
 
@@ -117,58 +119,46 @@ vault secrets tune -max-lease-ttl=87600h pki
 After this we create a root private key and certificate with the maximum time to live. The common name (CN) property on the certificate will be example.com. The CN is the most precise naming element on the certificate and is used to identify the owner of the certificate. In this case the owner will be the self-proclaimed domain administrator for example.com. To create the CA and save the result to disk issue the following command:
 
 ```bash
-vault write -field=certificate pki/root/generate/internal \
-           common_name="example.com" \
-           ttl=87600h > CA_cert.crt
+vault write -field=certificate pki/root/generate/internal common_name="example.com" ttl=87600h > CA_cert.crt
 ```
 
 The write command can be used to add properties to the PKI configuration. The write command overwrites all properties for a path whereas the tune command modifies specific properties, but leaves other properties untouched. Now issue the following command to change the CRL distribution endpoint:
 
 ```bash
-vault write pki/config/urls \
-           issuing_certificates="http://127.0.0.1:8200/v1/pki/ca" \
-           crl_distribution_points="http://127.0.0.1:8200/v1/pki/crl"
+vault write pki/config/urls issuing_certificates="http://127.0.0.1:8200/v1/pki/ca" crl_distribution_points="http://127.0.0.1:8200/v1/pki/crl"
 ```
 
 The crl_distribution_points property indicates that the certificate revocation list will be published on /v1/pki/crl. If you point your browser to [http://localhost:8200/v1/pki/crl](http://localhost:8200/v1/pki/crl) you will receive a list of all the certificates that have been revoked. Next, we have to create a separate secret engine to issue certificates with a max TTL of 5 years in order to provide CRDB with the Intermediate CA certificate, a node certificate and its corresponding private key. Jq is used to extract the certificate signing request (CSR):
 
 ```bash
-vault write -format=json pki_int/intermediate/generate/internal \
-           common_name="example.com Intermediate Authority" ttl="43800h" \
-           | jq -r '.data.csr' > pki_intermediate.csr
+vault write -format=json pki_int/intermediate/generate/internal common_name="example.com Intermediate Authority" ttl="43800h" | jq -r '.data.csr' > pki_intermediate.csr
 ```
 
 The output of the command above is a certificate signing request. Vault can sign the request with the CA private key. The intermediate CA will have the CN "example.com Intermediate Authority". Let's sign the CSR for the intermediate CA to create a chain:
 
 ```bash
-vault write -format=json pki/root/sign-intermediate csr=@pki_intermediate.csr \
-           format=pem_bundle ttl="43800h" \
-           | jq -r '.data.certificate' > intermediate.cert.pem
+vault write -format=json pki/root/sign-intermediate csr=@pki_intermediate.csr format=pem_bundle ttl="43800h" | jq -r '.data.certificate' > intermediate.cert.pem
 ```
 
-The output of this command is a certificate file that we should send to Vault. If your company already has a CA the PEM certificate should be provided by the administrator of the company CA. We can upload the signed certificate to Vault with the following command:
+The output of this command is a certificate file that we should send to Vault. If your company already has a CA, the PEM certificate should be provided by the administrator of the company CA. We can upload the signed certificate to Vault with the following command:
 
 ```bash
 vault write pki_int/intermediate/set-signed certificate=@intermediate.cert.pem
 ```
 
-Vault allows you to optionally provide a PEM file which contains both the CA and the intermediate CA (pem_bundle parameter). This allows a client to verify the chain of trust until the root. CRDB doesn't seem to verify the complete chain, therefore we leave it like this. Now we have to set which properties can be signed by the intermediate certificate. Let's configure the intermediate CA:
+Vault allows you to optionally provide a PEM file which contains both the CA and the intermediate CA (pem_bundle parameter). This allows a client to verify the chain of trust until the root. CRDB nodes don't seem to verify the complete chain, therefore we leave it like this (sql client might validate the complete chain if they use the <span style="color: #9e9e9e">verify-ca</span> option). Now we have to set which properties can be signed by the intermediate certificate. Let's configure the intermediate CA:
 
 ```bash
-vault write pki_int/roles/example-dot-com \
-           allowed_domains="example.com" \
-           allow_subdomains=true \
-           allow_any_name=true \
-           max_ttl="720h"
+vault write pki_int/roles/example-dot-com allowed_domains="example.com" allow_subdomains=true allow_any_name=true max_ttl="720h"
 ```
 
-This allows the example-dot-com role to issue certificates for the example.com domain. Typically the intermediate certificate would only be used for subdomains of example.com. However, CRDB requires the CN property on the node certificate to have the value "node" and therefore we have to allow_any_name. The max_ttl restricts all certificate issued by the intermediate CA to expire within 720 hours. This forces us to rotate the certificate for a node every 30 days. Next we can ask Vault to generate a new certificate for a node with the following command:
+This allows the example-dot-com role to issue certificates for the example.com domain. Typically the intermediate certificate would only be used for subdomains of example.com. However, CRDB requires the CN property on the node certificate to have the value "node" and therefore we have to <span style="color: #9e9e9e">allow_any_name</span>. The max_ttl restricts all certificate issued by the intermediate CA to expire within 720 hours. This forces us to rotate the certificate for a node every 30 days. Next we can ask Vault to generate a new certificate for a node with the following command:
 
 ```bash
 vault write -format=json pki_int/issue/example-dot-com common_name="node" alt_names="roach1" ip_sans="::" ttl="720h" > /cockroach-certs/vault_response.json
 ```
 
-The common_name for all nodes in the CRDB cluster must be "node". The alt_names and ip_sans should reflect the hostname and ip address of the node in the cluster. The ttl must not exceed the 720 hours we specified when creating the example-dot-com role. Vault will respond with the CA that signed the certificate, the private key and the certificate itself. All three files can be extracted with jq from the Vault response. The files need to be placed in the cockroach cert directory when starting a cockroach node with the --certs-dir argument. The private key of the CA remains in Vault. The directory layout of the certs-dir for every node must be:
+The common_name for all nodes in the CRDB cluster must be "node". The <span style="color: #9e9e9e">alt_names</span> and <span style="color: #9e9e9e">ip_sans</span> should reflect the hostname and ip address of the node in the cluster. The ttl must not exceed the 720 hours we specified when creating the example-dot-com role. Vault will respond with the CA that signed the certificate, the private key and the certificate itself. All three files can be extracted with jq from the Vault response. The files need to be placed in the cockroach cert directory when starting a cockroach node with the <span style="color: #9e9e9e">--certs-dir</span> argument. The private key of the CA remains in Vault. The directory layout of the certs-dir for every node must be:
 
 ```text
 certs-dir/
@@ -228,7 +218,7 @@ To run the go-client example issue the following command:
 docker-compose run go-client
 ```
 
-The image below shows the statements that were executed by the go-client.
+The image below shows the statements tab of the [dashboard](https://localhost:8080) that were executed by the go-client.
 
 ![cockroach dashboard go-client]({{ site.baseurl }}/assets/img/cockroachgoclient.png)
  
