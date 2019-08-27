@@ -228,9 +228,10 @@ To run the go-client example issue the following command:
 docker-compose run go-client
 ```
 
-![cockroach dashboard go-client]({{ site.baseurl }}/assets/img/cockroachgoclient.png)
+The image below shows the statements that were executed by the go-client.
 
-The above image shows the statements that were executed by the go-client. 
+![cockroach dashboard go-client]({{ site.baseurl }}/assets/img/cockroachgoclient.png)
+ 
 
 ## Renewing certificates
 
