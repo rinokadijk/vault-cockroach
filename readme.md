@@ -1,5 +1,6 @@
 ## HashiCorp Vault single instance and Cockroach DB 3-node cluster with Mutual TLS encryption
 
+This example is used as part of this [blog post](https://rinokadijk.github.io/vault-cockroach/). 
 This setup is NOT PRODUCTION READY! 
 
 It demonstrates how to use the Vault api to issue certificates for a secure CockroachDB cluster.
@@ -129,3 +130,4 @@ For a production-ready setup you should take at least the following into conside
 - You should make a plan and monitor and [alert](https://github.com/cockroachdb/cockroach/blob/ca8fa726de54a0feea9f33ad000e883a4168ef39/monitoring/rules/alerts.rules.yml#L91) for CockroachDB expiring certificates
 - You should revoke certificates that are not used anymore
 - Consider using an existing CA to sign your intermediate CA instead of generating one with Vault
+- Consider an extra layer of defense for the root and node certificates
