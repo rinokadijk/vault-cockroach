@@ -3,6 +3,8 @@ description: Managing CockroachDB certificates with HashiCorp Vault
 github_username:  rinokadijk
 base_url: /vault-cockroach/
 url: "https://rinokadijk.github.io"
+plugins:
+- jekyll-sitemap
 
 markdown: kramdown
 kramdown:
