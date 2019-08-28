@@ -34,6 +34,8 @@ By default CockroachDB will use the node certificate as the server certificate f
 open https://localhost:8080
 ```
 
+[https://localhost:8080](https://localhost:8080)
+
 ### Open Vault UI
 
 TOKEN: on disk in ./vault-token/root.token
@@ -41,6 +43,8 @@ TOKEN: on disk in ./vault-token/root.token
 ```bash
 open http://localhost:8200
 ```
+
+[https://localhost:8200](https://localhost:8200)
 
 ### Use the client certificate for user jpointsman to show databases 
 
