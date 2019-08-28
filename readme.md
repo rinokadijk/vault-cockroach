@@ -60,6 +60,8 @@ Or use the go-client to connect to the database with a client certificate in a s
 docker-compose run go-client
 ```
 
+The client certificate is valid for 24 hours. After 24 hours you have to renew the certificate.
+
 ### Renew certificate
 
 To renew all the certificates run the following command in a separate terminal:
