@@ -10,8 +10,15 @@ From a CockroachDB perspective the in-transit encryption between CockroachDB nod
 
 Make sure you have no running process which binds on port 8200, 8080 or 26257
 
+First, build the vault-init-client and go-client:
+
 ```bash
 docker-compose build
+```
+
+Next, start the containers:
+
+```bash
 docker-compose up
 ```
 
