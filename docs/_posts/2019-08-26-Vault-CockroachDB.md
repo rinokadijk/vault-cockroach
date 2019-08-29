@@ -1,22 +1,24 @@
 # Managing CockroachDB certificates with HashiCorp Vault
 
-By default CockroachDB (CRDB) uses digital certificates for authentication. Digital certificates in general provide stronger authentication and fit into the “3 Rs” of enterprise security: Repair, Repave, and Rotate. HashiCorp Vault makes the process of issuing, renewing and revoking certificates a lot easier. Both tools are designed for a cloud environment. If you like reading code more than you like reading blogs then I recommend cloning the [git repository](https://github.com/rinokadijk/vault-cockroach)
+By default CockroachDB (CRDB) uses digital certificates for authentication. If you are considering using CRDB in production you might want to manage certificates with HashiCorp Vault (Vault) to be able to scale database nodes and clients. Most databases authenticate users with a username and password. Digital certificates provide stronger authentication and fit into the “3 Rs” of enterprise security: Repair, Repave, and Rotate. Vault makes the process of issuing, renewing and revoking certificates a lot easier. Both tools are designed for a cloud environment. If you like reading code more than you like reading blog posts then I recommend cloning the [git repository](https://github.com/rinokadijk/vault-cockroach). Read on if you want to know more about how to manage  
 
-## CRDB
+## CRDB High Availability
+
+Depending on your availability requirements you could choose between single instance Postgres, HA Postgres or CockroachDB ([Postgres protocol](https://www.postgresql.org/docs/current/protocol.html) compatible).
 
 #### Single instance Postgres
 You could just run a single instance Postgres database. Assuming you regularly perform a backup and the Recovery Point Objective (RPO) and the Recovery Point Objective (RPO) are low, this might be your best solution. It is easy and simple to manage. However, it doesn't give high availability while upgrading your kernel or your database during maintenance. Worse, downtime is inevitable in case of a failure. 
 
 #### HA Postgres
-Postgres has a number of ways to make it highly [available](https://www.postgresql.org/docs/9.1/different-replication-solutions.html) all with different trade-offs. Most of the solutions rely on the network and assume there is only one master node at any point in time. Furthermore, these solutions don't cover the ["split-brain" problem](https://landing.google.com/sre/sre-book/chapters/managing-critical-state/). It requires a human to correctly decide whether or not a failover should take place to prevent having two master nodes running. Some solutions loose data in the event of a failover. In CRDB every node is a master and it can handle a split-brain scenario using the Raft protocol.
-
-#### Pets vs Cattle
-In a cloud environment we should treat our nodes as cattle as much as possible. Cattle is easy to scale and doesn't require special treatment for specific servers. A database server that assumes one master node, implies that these servers need to be treated as pets. In CRDB every node is a master. Your queries can be distributed across all of the nodes in the cluster. This means that adding more nodes to the cluster increases capacity, speed and reliability. It does force you to plan for data-locality to prevent high latency. CRDB is not a silver bullet. The devs at Cockroachlabs also make trade-offs to be able to scale the database over multiple regions. Some of the features of a traditional database simply don't scale and might never be supported. Fortunately there is very good documentation on which [features](https://www.cockroachlabs.com/docs/stable/detailed-sql-support.html) will and won't be supported.
+Postgres has a number of ways to make the database highly [available](https://www.postgresql.org/docs/9.1/different-replication-solutions.html) all with different trade-offs. Most of the solutions rely on the network and assume there is only one master node at any point in time. Furthermore, these solutions don't cover the ["split-brain" problem](https://landing.google.com/sre/sre-book/chapters/managing-critical-state/). It requires a human to correctly decide whether or not a failover should take place to prevent having two master nodes running. Some solutions loose data in the event of a failover. In CRDB every node is a master and it can handle a split-brain scenario using the [Raft](https://raft.github.io) protocol.
 
 #### RPO and RTO
 CRDB is designed to have an [RTO](https://www.cockroachlabs.com/blog/demand-zero-rpo/) of 4.5 seconds in the event of a disk failure or datacenter-level disaster. By default CRDB holds 24 hours of every table history in the system and you can query that data using [time-travel](https://www.cockroachlabs.com/blog/time-travel-queries-select-witty_subtitle-the_future/). This allows you to read the data at a certain recovery point in time with the "AS OF SYSTEM TIME" SQL query syntax.
 
-#### CRDB Features
+## Pets vs Cattle
+In a cloud environment we should treat our nodes as cattle as much as possible. Cattle is easy to scale and doesn't require special treatment for specific servers. A database server that assumes one master node, implies that these servers need to be treated as pets. In CRDB every node is a master and therefore all nodes can be treated as cattle. Your queries can be distributed across all of the nodes in the cluster. This means that adding more nodes to the cluster increases capacity, speed and reliability. It does force you to plan for [data-locality](https://www.waitingforcode.com/general-big-data/data-processing-locality-cloud-based-data-processing/read) to prevent high latency. CRDB is not a silver bullet. The devs at Cockroachlabs also make trade-offs to be able to scale the database over multiple regions. Some of the features of a traditional database simply don't scale and might never be supported. Fortunately there is very good documentation on which [features](https://www.cockroachlabs.com/docs/stable/detailed-sql-support.html) will and won't be supported.
+
+## CRDB Other Features
 Besides the availability, CRDB has a couple of unique features. These are my personal favourites:
 
 - Very good documentation on how to operate and migrate a database cluster
@@ -41,31 +43,31 @@ CRDB recommends using digital certificates to authenticate users. However, it is
 
 **A user accessing the Admin UI dashboard**
 
-By default the dashboard can be accessed over an HTTPS connection on port [8080](https://localhost:8080). You can provide the cockroach binary with a server certificate for the HTTPS connection. If the ApplicationName property is used in the Postgres connection sting, then the dashboard will split the query latency per connection. Some tools like IntelliJ IDEA will identify itself with the ApplicationName in the connection string. This makes debugging and analysis a lot easier. By default users are created without a password. You have to create a password for every user / system that is authorised access to the dashboard. The same user account is used for querying the system and accessing the dashboard. Once authenticated, the user can only see information about the databases it was granted access to.
+By default the dashboard can be accessed over an HTTPS connection on port [8080](https://localhost:8080). You can provide the cockroach binary with a server certificate for the HTTPS connection. If the ApplicationName property is used in the Postgres connection sting, then the dashboard will split the query latency per connection. Some tools like IntelliJ IDEA will identify itself with the ApplicationName in the connection string. This makes debugging and analysis a lot easier. By default users are created without a password. You have to create a password for every user / system that is authorized access to the dashboard. The same user account is used for querying the system and accessing the dashboard. Once authenticated, the user can only see information about the databases it was granted access to.
 
 **A database node joining a cluster**
 
-If you run a secure cluster, a new node needs to authenticate itself with digital certificate. Obviously you don't want some random node to sync your precious data to it without strong authentication. The default port for internal traffic is the same as a the port that is used by clients. To join a cluster a node needs to present a certificate with specific properties. So be careful not to provide a client with this kind of privilege. 
+If you run a secure cluster, a new node needs to authenticate itself with digital certificate. Obviously you don't want some random node to sync your precious data to it without strong authentication. So be careful not to provide an SQL client with this kind of privilege. The default port for internal traffic (to synchronize database nodes) is the same as a the port that is used by SQL clients. To join a cluster a node needs to present a certificate with specific properties. 
 
-Digital certificates are verified using a chain of trust. The trust anchor for the digital certificate is the root certificate authority (CA). Your browser ships with a couple of predefined CA's that you could use to issue a client certificate. However, it would be tedious to manually request a client certificate every you want a node to join the cluster (or the certificate for the node expires). It becomes really annoying when every new SQL client needs a certificate. To automate this process there are two options:
+Digital certificates are verified using a chain of trust. The trust anchor for the digital certificate is the root certificate authority (CA). Most operating systems and browsers ship with a couple of predefined CA's that are trusted. You could request those one of those CA's to sign your certificate request. However, it would be tedious to manually request a client certificate every time you want a node to join the cluster (or the certificate for the node expires). It becomes really annoying when every new SQL client needs a certificate. To automate this process there are two options:
 
 **The cockroach cert command** can be used to create a chain of trust. You could use openssl to generate all the client certificates. In practice it's a lot easier to use the <span style="color: #9e9e9e">cockroach cert create-ca</span>, <span style="color: #9e9e9e">cockroach cert create-node</span> and <span style="color: #9e9e9e">cockroach cert create-client</span> commands to automate this process. These commands provide the properties on the certificates that are required by a cockroach cluster to authenticate. All of these commands require you to have the CA certificate and private key present when issuing a certificate. In general it is not considered a good practice moving the private key of the CA around your infrastructure.
 
 **Use an existing CA** if your company already has one. Digital certificates are signed with a private key. When using an existing CA, the third party or system is responsible for safely storing the private key to issue the digital certificates. When you want a new client to access the CRDB cluster, you should create a certificate with the correct properties and send a Certificate Signing Request (CSR) to the existing CA. The existing CA should respond with a digitally signed client certificate that can be used for authentication.
 
-## HashiCorp Vault
+## Vault
 
-Issuing and rotating digital certificates can be a painful proces. This might lead to long-lived certificates to postpone the pain of renewing or rotating them. Some developers will tell you ["if it hurts, do it more often"](https://www.martinfowler.com/bliki/FrequencyReducesDifficulty.html). I consider this to also be true for issuing digital certificates. Vault allows you to automate a lot of the procedures around issuing, renewing and revoking digital certificates. This has the added benefit that you can respond quickly in the case of an emergency or when a certificate expires. Short-lived, single-purpose secrets generally reduce the attack surface of your infrastructure.
+Issuing and rotating digital certificates can be a painful proces. This might lead to long-lived certificates to postpone the pain of renewing or rotating them. Some developers will tell you ["if it hurts, do it more often"](https://www.martinfowler.com/bliki/FrequencyReducesDifficulty.html). I consider this to also be true for issuing digital certificates. Recently Google [proposed](https://www.zdnet.com/article/google-wants-to-reduce-lifespan-for-https-certificates-to-one-year/) to reduce the lifespan of https certificates. Vault allows you to automate a lot of the procedures around issuing, renewing and revoking digital certificates. This has the added benefit that you can respond quickly in the case of an emergency or when a certificate expires. Short-lived, single-purpose secrets generally reduce the attack surface of your infrastructure.
 
 Vault can handle different types of secrets like passwords, SSH keys, database credentials and certificates. It simplifies a lot of the operational burden when it comes to issuing, rotating and retrieving secrets. In the CRDB use-case both an SQL client and a database node can have multiple certificates. Certificates expire and in some cases they need to be revoked. Vault keeps a database of all the certificates it has issued. You can can use this database to batch operations like revoking specific certificates. The tool also provides an audit log to track abuse and detect anomaly patterns. 
 
-The PKI secrets engine can integrate with your existing CA. It can also act as an intermediate CA. This allows you to delegate the issuing, [revocation](https://github.com/cockroachdb/cockroach/issues/29641), rotation and expiration of the database credentials to Vault. The tool integrates with existing authentication and authorization protocols, which allows you to mix and match. For example, you could use LDAP authentication to grant a database client access to a database. It provides a standardised API to support short-lived secrets. The following steps will show you how to generate the certificates for CRDB database nodes.
+The PKI secrets engine can integrate with your existing CA. It can also act as an intermediate CA. This allows you to delegate the issuing, [revocation](https://github.com/cockroachdb/cockroach/issues/29641), rotation and expiration of the database credentials to Vault. The tool integrates with existing authentication and authorization protocols, which allows you to mix and match. For example, you could use LDAP authentication to grant a database client access to a database. It provides a standardised API to support short-lived secrets.
 
 ## Demo time
 
 ![chain of trust]({{ site.baseurl }}/assets/img/chainoftrust.png)
 
-The above image shows the chain of trust for the demo setup. A docker-compose file is used to start a vault and a cockroach cluster:
+The following steps will demonstrate how to generate the certificates for CRDB database nodes. The above image shows the chain of trust for the demo setup. A docker-compose file is used to start a vault and a cockroach cluster:
 
 ```bash
 git clone https://github.com/rinokadijk/vault-cockroach.git
@@ -82,28 +84,28 @@ In this example the client containers (vault-init-client and roach-client) are r
 
 **vault**
 
-The official HashiCorp Vault Docker container running the Vault server on port 8200 with TLS disabled. The CA data, Intermediate CA data and all issued certificates are stored in this instance. Vault is configured with the UI enabled and a filesystem storage backend. The config is stored in the /vault-config volume mapping. The data and logs are available in the /vault-data volume mapping.
+The vault container is based on the official Vault Docker container running the Vault server on port 8200 with TLS disabled. The CA data, Intermediate CA data and all issued certificates are stored in this instance. Vault is configured with the UI enabled and a filesystem storage backend. The config is stored in the /vault-config volume mapping. The data and logs are available in the /vault-data volume mapping.
 
 **roach1, roach2 and roach3**
 
-The official CRDB Docker containers. A shell script waits for the CA.crt to become available before starting a cluster with the <span style="color: #9e9e9e">--secure</span> and <span style="color: #9e9e9e">--join</span> argument. The <span style="color: #9e9e9e">--join</span> argument is used to discover the other CRDB nodes. The roach1 node is not provided a <span style="color: #9e9e9e">--join</span> argument to init the cluster immediately. However, in a production scenario you must provide the <span style="color: #9e9e9e">--join</span> argument for all nodes and explicitly trigger the init command to bootstrap the cluster. If you forget to add the <span style="color: #9e9e9e">--join</span> argument, the node might act as if it were a single node cluster on reboot. 
+The roach1, roach2 and roach3 containers are based on the official CRDB Docker containers. A shell script waits for the CA.crt to become available before starting a cluster with the <span style="color: #9e9e9e">--secure</span> and <span style="color: #9e9e9e">--join</span> argument. The <span style="color: #9e9e9e">--join</span> argument is used to discover the other CRDB nodes. The roach1 node is not provided with a <span style="color: #9e9e9e">--join</span> argument to init the cluster immediately. However, in a production scenario you must provide the <span style="color: #9e9e9e">--join</span> argument for all nodes and explicitly trigger the init command to bootstrap the cluster. If you forget to add the <span style="color: #9e9e9e">--join</span> argument, the node might act as if it were a single node cluster on reboot. 
 
 You should also consider using something like Consul Template to discover and configure your nodes as cattle. The roach1 node exposes the dashboard and sql server on port 8080 and 26257. The other nodes don't expose any ports to avoid clashes. In a production scenario you would expose port 8080 and 26257 and use a load balancer to distribute load across all nodes. The certificates are generated by the vault-init-client container and shared through a Docker volume (/cockroach-data/roachX). Certificates are read from the Docker volume.
 
 **vault-init-client**
 
-A custom image based on the official HashiCorp Vault Docker container with jq and curl installed to simplify the extraction of certificates from vault API responses. This instance is responsible for using the Vault client to initialise and unseal the Vault server. Once unsealed it uses the root token to generate a CA, Intermediate CA and Digital Certificates for roach1, roach2, roach3 and roach-client. It shares the certificates with the other images through a shared Docker volume (/cockroach-data/roachX and /cockroach-data/roach-client).
+A custom image based on the official Vault Docker container with jq and curl installed to simplify the extraction of certificates from vault API responses. This instance is responsible for using the Vault client to initialize and unseal the Vault server. Once unsealed it uses the root token to generate a CA, Intermediate CA and Digital Certificates for roach1, roach2, roach3 and roach-client. It shares the certificates with the other images through a shared Docker volume (/cockroach-data/roachX and /cockroach-data/roach-client).
 
 Let's have a more detailed look at the init-certificate-chain.sh script which is used by the vault-init-client container.
 
-The first step is to check if we should initialise and unseal Vault:
+The first step is to check if we should initialize and unseal Vault:
 
 ```bash
 IS_INITIALIZED=$(vault status | grep Initialized | awk '{ print $2 }')
 IS_SEALED=$(vault status | grep Sealed | awk '{ print $2 }')
 ```
 
-The script assumes that a new chain of trust must be created when the Vault is initialised for the first time. Both initialising Vault and creating a new chain of trust should only be done once. To be able to create the chain of trust the PKI secrets engine must be enabled with a role that is allowed to enable the PKI backend:
+The script assumes that a new chain of trust must be created when the Vault is initialized for the first time. Both initialising Vault and creating a new chain of trust should only be done once. To be able to create the chain of trust the PKI secrets engine must be enabled with a role that is allowed to enable the PKI backend:
 
 ```bash
 vault login ${ROOT_TOKEN}
@@ -175,7 +177,7 @@ vault write -format=json pki_int/issue/example-dot-com common_name="jpointsman" 
 
 **roach-client**
 
-Standard CRDB Docker container. Uses the CRDB client with the root account to create a Dashboard UI user. Certificates are read from the volume. The certificates are generated by the vault-init-client container and shared through a Docker volume (/cockroach-data/roach-client).
+The roach-client container is based on the official CRDB Docker container. It uses the CRDB client with the root account to create a Dashboard UI user. Certificates are read from the volume. The certificates are generated by the vault-init-client container and shared through a Docker volume (/cockroach-data/roach-client).
 For the CRDB client the certificates should have the names corresponding to the username with a "client." prefix. The directory layout of the certs-dir for every node must be:
 
 ```text
@@ -242,3 +244,6 @@ You can check the certificate dates with the following command:
 ```bash
 echo | openssl s_client -connect localhost:26257 2>/dev/null | openssl x509 -noout -dates
 ```
+
+## Conclusion
+CRDB is designed to run in the cloud and be resilient to failures. Vault allows you to automate and manage certificates in a cloud environment. The docker-compose example combines Vault and CockroachDB to manage certificates for authentication. Hopefully it helps you getting started using Vault for managing digital certificates with CRDB.
