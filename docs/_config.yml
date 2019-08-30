@@ -1,5 +1,5 @@
-title: Vault CockroachDB
-description: Managing CockroachDB certificates with HashiCorp Vault
+title: Managing Cockroach Database certificates with HashiCorp Vault
+description: Issuing and rotating digital certificates can be a painful process. Cockroach Database uses digital certififates for authentiation. This blog post demonstrates how to automate the process of issuing and renewing short-lived certificates with HashiCorp Vault.
 github_username:  rinokadijk
 base_url: /vault-cockroach/
 url: "https://rinokadijk.github.io"
