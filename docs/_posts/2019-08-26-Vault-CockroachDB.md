@@ -28,12 +28,14 @@ Besides the availability, CRDB has a couple of unique features. These are my per
 - Zipkin and Jaeger [traces](https://wiki.crdb.io/wiki/spaces/CRDB/pages/73171339/Tracing+logs+with+Jaeger+and+Zipkin)
 - Runs on [Kubernetes](https://www.cockroachlabs.com/docs/v19.1/orchestrate-cockroachdb-with-kubernetes.html) and [Mesos](https://github.com/cockroachdb/dcos-cockroachdb-service)
 - Support for multi-cloud / multi-region / on-prem deployments
-- Change Data Capture to stream database changes via WAL to a Kafka cluster
+- Change Data Capture to stream database changes via [WAL](https://www.postgresql.org/docs/9.1/wal-intro.html) to a Kafka cluster
 - A LOT of prometheus metrics and preconfigured [alerts](https://github.com/cockroachdb/cockroach/blob/master/cloud/kubernetes/prometheus/alert-rules.yaml)
 - Spring Data JPA support
-- Flywaydb support
-- Blazing fast startup time for the CRDB Docker image for local-development
+- [Flywaydb](https://flywaydb.org/documentation/database/cockroachdb) support
+- Blazing fast startup time for the CRDB [Docker image](https://hub.docker.com/r/cockroachdb/cockroach) which speeds up local-development
 - [JUnit runner](https://github.com/Melozzola/cockroachdb-dev-test)
+
+If you are considering CRDB as an alternative to Postgres you might want to read a more detailed [comparison](https://www.objectrocket.com/blog/cockroachdb/how-to-choose-between-postgresql-and-cockroachdb/) by ObjectRocket. 
 
 ## How CRDB authentication works
 
@@ -45,7 +47,7 @@ CRDB recommends using digital certificates to authenticate users. However, it is
 
 **A user accessing the Admin UI dashboard**
 
-By default the dashboard can be accessed over an HTTPS connection on port [8080](https://localhost:8080). You can provide the cockroach binary with a server certificate for the HTTPS connection. If the ApplicationName property is used in the Postgres connection sting, then the dashboard will split the query latency per connection. Some tools like IntelliJ IDEA will identify itself with the ApplicationName in the connection string. This makes debugging and analysis a lot easier. By default users are created without a password. You have to create a password for every user / system that has authorized access to the dashboard. The same user account is used for querying the system and accessing the dashboard. Once authenticated, the user can only see information about the databases it was granted access to.
+By default the dashboard can be accessed over an HTTPS connection on port [8080](https://localhost:8080). You can provide the cockroach binary with a server certificate for the HTTPS connection. If the ApplicationName property is used in the Postgres connection sting, then the dashboard will split the query latency per connection. Some tools like [IntelliJ IDEA](https://www.cockroachlabs.com/docs/stable/intellij-idea.html) will identify itself with the ApplicationName in the connection string. This makes debugging and analysis a lot easier. By default users are created without a password. You have to create a password for every user / system that has authorized access to the dashboard. The same user account is used for querying the system and accessing the dashboard. Once authenticated, the user can only see information about the databases he was granted access to.
 
 **A database node joining a cluster**
 
@@ -59,7 +61,7 @@ Digital certificates are verified using a chain of trust. The trust anchor for t
 
 ## Vault
 
-Issuing and rotating digital certificates can be a painful process. This might lead to long-lived certificates to postpone the pain of renewing or rotating them. It is also hard to keep a centralized view of the certificates issued to SQL clients (and when they will expire). Some developers will tell you ["if it hurts, do it more often"](https://www.martinfowler.com/bliki/FrequencyReducesDifficulty.html). I consider this to also be true for issuing digital certificates. Vault allows you to automate a lot of the procedures around issuing, renewing and revoking digital certificates. This has the added benefit that you can respond quickly in the case of an emergency or when a certificate expires. Short-lived, single-purpose secrets generally reduce the attack surface of your infrastructure.
+Since CRDB is a [cloud-native](https://www.techopedia.com/definition/32572/cloud-native-architecture) database, nodes and clients come and go. These nodes and clients use certificates for authentication. Issuing and rotating digital certificates can be a painful process. This might lead to long-lived certificates to postpone the pain of renewing or rotating them. It is also hard to keep a centralized view of the certificates issued to SQL clients (and when they will expire). Some developers will tell you ["if it hurts, do it more often"](https://www.martinfowler.com/bliki/FrequencyReducesDifficulty.html). I consider this to also be true for issuing digital certificates. Vault allows you to automate a lot of the procedures around issuing, renewing and revoking digital certificates. This has the added benefit that you can respond quickly in the case of an emergency or when a certificate expires. Short-lived, single-purpose secrets generally reduce the attack surface of your infrastructure.
 
 Vault can handle different types of secrets like passwords, SSH keys, database credentials and certificates. It simplifies a lot of the operational burden when it comes to issuing, rotating and retrieving secrets. In the CRDB use-case both an SQL client and a database node can have multiple certificates. Certificates expire and in some cases they need to be revoked. Vault keeps a database of all the certificates it has issued. You can can use this database to batch operations like revoking specific certificates. The tool also provides an audit log to track abuse and detect anomaly patterns. 
 
@@ -86,11 +88,11 @@ In this example the client containers (vault-init-client and roach-client) are r
 
 **vault**
 
-The vault container is based on the official Vault Docker container running the Vault server on port 8200 with TLS disabled. The CA data, Intermediate CA data and all issued certificates are stored in this instance. Vault is configured with the UI enabled and a filesystem storage backend. The config is stored in the /vault-config volume mapping. The data and logs are available in the /vault-data volume mapping.
+The vault container is based on the [official](https://hub.docker.com/_/vault) Vault Docker container running the Vault server on port 8200 with TLS disabled. The CA data, Intermediate CA data and all issued certificates are stored in this instance. Vault is configured with the UI enabled and a filesystem storage backend. The config is stored in the /vault-config volume mapping. The data and logs are available in the /vault-data volume mapping.
 
 **roach1, roach2 and roach3**
 
-The roach1, roach2 and roach3 containers are based on the official CRDB Docker containers. A shell script waits for the CA.crt to become available before starting a cluster with the <span style="color: #9e9e9e">--secure</span> and <span style="color: #9e9e9e">--join</span> argument. The <span style="color: #9e9e9e">--join</span> argument is used to discover the other CRDB nodes. The roach1 node is not provided with a <span style="color: #9e9e9e">--join</span> argument to init the cluster immediately. However, in a production scenario you must provide the <span style="color: #9e9e9e">--join</span> argument for all nodes and explicitly trigger the init command to bootstrap the cluster. If you forget to add the <span style="color: #9e9e9e">--join</span> argument, the node might act as if it were a single node cluster on reboot. 
+The roach1, roach2 and roach3 containers are based on the [official]((https://hub.docker.com/r/cockroachdb/cockroach)) CRDB Docker containers. A shell script waits for the CA.crt to become available before starting a cluster with the <span style="color: #9e9e9e">--secure</span> and <span style="color: #9e9e9e">--join</span> argument. The <span style="color: #9e9e9e">--join</span> argument is used to discover the other CRDB nodes. The roach1 node is not provided with a <span style="color: #9e9e9e">--join</span> argument to init the cluster immediately. However, in a production scenario you must provide the <span style="color: #9e9e9e">--join</span> argument for all nodes and explicitly trigger the init command to bootstrap the cluster. If you forget to add the <span style="color: #9e9e9e">--join</span> argument, the node might act as if it were a single node cluster on reboot. 
 
 You should also consider using something like Consul Template to discover and configure your nodes as cattle. The roach1 node exposes the dashboard and sql server on port 8080 and 26257. The other nodes don't expose any ports to avoid clashes. In a production scenario you would expose port 8080 and 26257 and use a [load balancer](https://www.scaleway.com/en/docs/how-to-configure-a-cockroachdb-cluster/#-Configure-HAproxy) to distribute load across all nodes. The certificates are generated by the vault-init-client container and shared through a Docker volume (/cockroach-data/roachX). Certificates are read from the Docker volume.
 
@@ -235,7 +237,7 @@ Renewing your node and client certificates is really easy. To renew all the cert
 docker-compose up -d vault-init-client
 ```
 
-This command will generate new certificates for nodes roach1, roach2, roach3 and for users root and jpointsman. The existing certificates will be overwritten. To instruct CRDB to reload the certificates without downtime run the following command:
+This command will use vault in client mode to generate new certificates for nodes roach1, roach2, roach3 and for users root and jpointsman. The existing certificates will be overwritten. The vault-init-client skips initializing and unsealing the Vault if the Vault is initialized. To reload the certificates without downtime run the following command:
 
 ```bash
 docker-compose kill -s SIGHUP roach1 roach2 roach3
@@ -248,4 +250,4 @@ echo | openssl s_client -connect localhost:26257 2>/dev/null | openssl x509 -noo
 ```
 
 ## Conclusion
-Modern cloud-native solutions like [Kubernetes](https://kubernetes.io/docs/concepts/cluster-administration/certificates/), [Istio](https://istio.io/docs/concepts/security/), [CRDB](https://www.cockroachlabs.com/docs/stable/create-security-certificates.html) and [Vault](https://www.vaultproject.io/docs/secrets/pki/index.html) use digital certificates for authentication. Short-lived certificates prevent bad certificates to continue to [live on for years](https://www.zdnet.com/article/google-wants-to-reduce-lifespan-for-https-certificates-to-one-year/) after being mississued and revoked. CRDB is designed to run in the cloud and be resilient to failures. Vault allows you to automate and manage certificates for CRDB and other cloud-native technologies. Hopefully the docker-compose example helps you getting started using Vault for managing digital certificates with CRDB.
+Modern cloud-native solutions like [Kubernetes](https://kubernetes.io/docs/concepts/cluster-administration/certificates/), [Istio](https://istio.io/docs/concepts/security/), [CRDB](https://www.cockroachlabs.com/docs/stable/create-security-certificates.html) and [Vault](https://www.vaultproject.io/docs/secrets/pki/index.html) use digital certificates for authentication. Short-lived certificates prevent bad certificates to continue to [live on for years](https://www.zdnet.com/article/google-wants-to-reduce-lifespan-for-https-certificates-to-one-year/) after being mississued and revoked. CRDB is designed to run in the cloud and be resilient to failures. Vault allows you to automate and manage certificates for CRDB. Hopefully the docker-compose example helps you getting started using digital certificates.
