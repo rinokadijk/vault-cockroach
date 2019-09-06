@@ -4,7 +4,7 @@
 
 By default CockroachDB (CRDB) uses digital certificates for authentication and encryption. If you are considering using CRDB in production you might want to manage certificates with HashiCorp Vault (Vault) to be able to scale database nodes and clients. Most databases authenticate users with a username and password. Digital certificates provide stronger authentication and fit into the [“3 Rs”](https://www.youtube.com/watch?v=NUXpz0Dni50) of enterprise security: Repair, Repave, and Rotate. Vault makes the process of issuing, renewing and revoking certificates a lot easier. Both tools are designed for a cloud environment. If you like reading code more than you like reading blog posts then I recommend cloning the [git repository](https://github.com/rinokadijk/vault-cockroach). Read on if you want to know more about CRDB, Vault and certificate management. 
 
-<h2><img src="{{ site.url }}/assets/img/cockroachdb.png" width="100px" height="100px">CockroachDB</h2>
+<h2><img src="{{ site.baseurl }}/assets/img/cockroachdb.png" width="100px" height="100px">CockroachDB</h2>
 
 Depending on your availability requirements you could choose between single instance Postgres, HA Postgres or CockroachDB (Postgres [protocol](https://www.postgresql.org/docs/current/protocol.html) compatible). All three solutions support [digital certificates](https://info.crunchydata.com/blog/ssl-certificate-authentication-postgresql-docker-containers) and TLS [encryption](https://www.postgresql.org/docs/9.1/ssl-tcp.html). You might ask yourself "do I really need a [cloud-native](https://www.techopedia.com/definition/32572/cloud-native-architecture) database?".
 
