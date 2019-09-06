@@ -4,17 +4,17 @@
 
 By default CockroachDB (CRDB) uses digital certificates for authentication and encryption. If you are considering using CRDB in production you might want to manage certificates with HashiCorp Vault (Vault) to be able to scale database nodes and clients. Most databases authenticate users with a username and password. Digital certificates provide stronger authentication and fit into the [“3 Rs”](https://www.youtube.com/watch?v=NUXpz0Dni50) of enterprise security: Repair, Repave, and Rotate. Vault makes the process of issuing, renewing and revoking certificates a lot easier. Both tools are designed for a cloud environment. If you like reading code more than you like reading blog posts then I recommend cloning the [git repository](https://github.com/rinokadijk/vault-cockroach). Read on if you want to know more about CRDB, Vault and certificate management. 
 
-## CRDB High Availability
+<h2><img src="{{ site.url }}/assets/img/cockroachdb.png.256x256_q85.png" width="100px" height="100px">CockroachDB</h2>
 
-Depending on your availability requirements you could choose between single instance Postgres, HA Postgres or CockroachDB ([Postgres protocol](https://www.postgresql.org/docs/current/protocol.html) compatible). All three solutions support [digital certificates](https://info.crunchydata.com/blog/ssl-certificate-authentication-postgresql-docker-containers) and TLS [encryption](https://www.postgresql.org/docs/9.1/ssl-tcp.html). You might ask yourself "do I really need a [cloud-native](https://www.techopedia.com/definition/32572/cloud-native-architecture) database?".
+Depending on your availability requirements you could choose between single instance Postgres, HA Postgres or CockroachDB (Postgres [protocol](https://www.postgresql.org/docs/current/protocol.html) compatible). All three solutions support [digital certificates](https://info.crunchydata.com/blog/ssl-certificate-authentication-postgresql-docker-containers) and TLS [encryption](https://www.postgresql.org/docs/9.1/ssl-tcp.html). You might ask yourself "do I really need a [cloud-native](https://www.techopedia.com/definition/32572/cloud-native-architecture) database?".
 
 #### Single instance Postgres
 You could just run a single instance Postgres database. Assuming you regularly perform a backup and both the Recovery Point Objective (RPO) and the Recovery Time Objective (RTO) are low, this might be your best solution. It is easy and simple to manage. However, it doesn't give high availability while upgrading your kernel or your database during maintenance. Worse, downtime is inevitable in case of a failure. 
 
 #### HA Postgres
-Postgres has a number of ways to make the database highly [available](https://www.postgresql.org/docs/9.1/different-replication-solutions.html) all with different RPO and RTO trade-offs. Most of the solutions rely on the network and assume there is only one master node at any point in time. Furthermore, these solutions don't cover the ["split-brain" problem](https://landing.google.com/sre/sre-book/chapters/managing-critical-state/). It requires a human to correctly decide whether or not a failover should take place to prevent having two master nodes running. Some solutions lose data in the event of a failover.
+Postgres has a number of ways to make the database highly [available](https://www.postgresql.org/docs/9.1/different-replication-solutions.html) all with different RPO and RTO trade-offs. Most of the solutions rely on the network and assume there is only one master node at any point in time. Furthermore, these solutions don't cover the ["split-brain"](https://landing.google.com/sre/sre-book/chapters/managing-critical-state/) problem. It requires a human to correctly decide whether or not a failover should take place to prevent having two master nodes running. Some solutions lose data in the event of a failover.
 
-#### CRDB RPO and RTO
+#### CRDB
 In CRDB every node is a master and it can handle a split-brain scenario using the [Raft](https://raft.github.io) protocol. CRDB is designed to have an [RTO](https://www.cockroachlabs.com/blog/demand-zero-rpo/) of 4.5 seconds in the event of a disk failure or datacenter-level disaster. By default CRDB holds 24 hours of every table history in the system and you can query that data using [time-travel](https://www.cockroachlabs.com/blog/time-travel-queries-select-witty_subtitle-the_future/). This allows you to read the data at a certain point in time with the "AS OF SYSTEM TIME" SQL query syntax.
 
 ## Pets vs Cattle
@@ -47,7 +47,11 @@ CRDB recommends using digital certificates to authenticate users. However, it is
 
 **A user accessing the Admin UI dashboard**
 
-By default the dashboard can be accessed over an HTTPS connection on port [8080](https://localhost:8080). You can provide the cockroach binary with a server certificate for the HTTPS connection. If the ApplicationName property is used in the Postgres connection sting, then the dashboard will split the query latency per connection. Some tools like [IntelliJ IDEA](https://www.cockroachlabs.com/docs/stable/intellij-idea.html) will identify itself with the ApplicationName in the connection string. This makes debugging and analysis a lot easier. By default users are created without a password. You have to create a password for every user / system that has authorized access to the dashboard. The same user account is used for querying the system and accessing the dashboard. Once authenticated, the user can only see information about the databases he was granted access to.
+![cockroachdb dashboard certificate in browser]({{ site.baseurl }}/assets/img/node1cert.png)
+
+The above image shows the certificate for the dashboard in a browser. The certificate is issued by "example Intermediate CA" and the common name is "node". The Subject Alternative Name (SAN) has the value "roach1". The domain name (localhost) doesn't match the SAN and the Intermediate CA is not trusted by the browser. Therefore the browser will show a warning when opening the dashboard. By default the dashboard can be accessed over an HTTPS connection on port [8080](https://localhost:8080). 
+
+You can provide the cockroach binary with a server certificate for the HTTPS connection to prevent a browser warning. By default users are created without a password. You have to create a password for every user / system that has authorized access to the dashboard. The same user account is used for querying the system and accessing the dashboard. Once authenticated, the user can only see information about the databases he was granted access to.
 
 **A database node joining a cluster**
 
@@ -59,7 +63,7 @@ Digital certificates are verified using a chain of trust. The trust anchor for t
 
 **Use an existing CA** if your company already has one. Digital certificates are signed with a private key. When using an existing CA, the third party or system is responsible for safely storing the private key to issue the digital certificates. When you want a new client to access the CRDB cluster, you should create a certificate with the correct properties and send a Certificate Signing Request (CSR) to the existing CA. The existing CA should respond with a digitally signed client certificate that can be used for authentication.
 
-## Vault
+<h2><img src="{{ site.baseurl }}/assets/img/Vault_VerticalLogo_Black.png" width="100px" height="100px">Vault</h2>
 
 Since CRDB is a [cloud-native](https://www.techopedia.com/definition/32572/cloud-native-architecture) database, nodes and clients come and go. These nodes and clients use certificates for authentication. Issuing and rotating digital certificates can be a painful process. This might lead to long-lived certificates to postpone the pain of renewing or rotating them. It is also hard to keep a centralized view of the certificates issued to SQL clients (and when they will expire). Some developers will tell you ["if it hurts, do it more often"](https://www.martinfowler.com/bliki/FrequencyReducesDifficulty.html). I consider this to also be true for issuing digital certificates. Vault allows you to automate a lot of the procedures around issuing, renewing and revoking digital certificates. This has the added benefit that you can respond quickly in the case of an emergency or when a certificate expires. Short-lived, single-purpose secrets generally reduce the attack surface of your infrastructure.
 
