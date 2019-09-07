@@ -44,7 +44,7 @@ TOKEN: on disk in ./vault-token/root.token
 open http://localhost:8200
 ```
 
-[https://localhost:8200](https://localhost:8200)
+[http://localhost:8200](https://localhost:8200)
 
 ### Use the client certificate for user jpointsman to show databases 
 
