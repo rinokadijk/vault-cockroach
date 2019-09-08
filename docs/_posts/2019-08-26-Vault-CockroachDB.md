@@ -30,7 +30,6 @@ Besides the availability, CRDB has a couple of unique features. These are my per
 - Support for multi-cloud / multi-region / on-prem deployments
 - Change Data Capture to stream database changes via [WAL](https://www.postgresql.org/docs/9.1/wal-intro.html) to a Kafka cluster
 - A LOT of prometheus metrics and preconfigured [alerts](https://github.com/cockroachdb/cockroach/blob/master/cloud/kubernetes/prometheus/alert-rules.yaml)
-- Spring Data JPA support
 - [Flywaydb](https://flywaydb.org/documentation/database/cockroachdb) support
 - Blazing fast startup time for the CRDB [Docker image](https://hub.docker.com/r/cockroachdb/cockroach) which speeds up local-development
 - [JUnit runner](https://github.com/Melozzola/cockroachdb-dev-test)
@@ -47,11 +46,11 @@ CRDB recommends using digital certificates to authenticate users. However, it is
 
 **A user accessing the Admin UI dashboard**
 
-![cockroachdb dashboard certificate in browser]({{ site.baseurl }}/assets/img/node1cert.png)
+![cockroachdb dashboard certificate in browser]({{ site.baseurl }}/assets/img/node1cert.gif)
 
 The above image shows the certificate for the dashboard in a browser. The certificate is issued by "example Intermediate CA" and the common name is "node". The Subject Alternative Name (SAN) has the value "roach1". The domain name (localhost) doesn't match the SAN and the Intermediate CA is not trusted by the browser. Therefore the browser will show a warning when opening the dashboard. By default the dashboard can be accessed over an HTTPS connection on port [8080](https://localhost:8080). 
 
-You can provide the cockroach binary with a server certificate for the HTTPS connection to prevent a browser warning. By default users are created without a password. You have to create a password for every user / system that has authorized access to the dashboard. The same user account is used for querying the system and accessing the dashboard. Once authenticated, the user can only see information about the databases he was granted access to.
+You can provide the cockroach binary with a server certificate for the HTTPS connection to [prevent](https://www.cockroachlabs.com/docs/stable/create-security-certificates-custom-ca.html#accessing-the-admin-ui-for-a-secure-cluster) a browser warning. By default users are created without a password. You have to create a password for every user / system that has authorized access to the dashboard. The same user account is used for querying the system and accessing the dashboard. Once authenticated, the user can only see information about the databases he was granted access to.
 
 **A database node joining a cluster**
 
@@ -88,7 +87,7 @@ The docker-compose file starts 1 Vault node in server mode and 3 CRDB nodes in s
 
 ![container overview]({{ site.baseurl }}/assets/img/containeroverview.png)
 
-In this example the client containers (vault-init-client and roach-client) are responsible for generating and distributing the certificates through Docker volumes. In a production setup it might be more convenient to extend the CRDB container with logic to request new certificates and revoke old certificates. Most of the logic in the example is in the vault-init-client container. It is responsible for bootstrapping the Vault container and initialising the PKI secrets engine.
+In this example the client containers (vault-init-client and roach-client) are responsible for generating and distributing the certificates through Docker volumes. In a production setup it might be more convenient to extend the CRDB container with logic to request new certificates and revoke old certificates. Most of the logic in the example is in the vault-init-client container. It is responsible for bootstrapping the Vault container and initializing the PKI secrets engine. The next sections will explain the responsibility of each container in more detail.
 
 **vault**
 
@@ -98,11 +97,11 @@ The vault container is based on the [official](https://hub.docker.com/_/vault) V
 
 The roach1, roach2 and roach3 containers are based on the [official]((https://hub.docker.com/r/cockroachdb/cockroach)) CRDB Docker containers. A shell script waits for the CA.crt to become available before starting a cluster with the <span style="color: #9e9e9e">--secure</span> and <span style="color: #9e9e9e">--join</span> argument. The <span style="color: #9e9e9e">--join</span> argument is used to discover the other CRDB nodes. The roach1 node is not provided with a <span style="color: #9e9e9e">--join</span> argument to init the cluster immediately. However, in a production scenario you must provide the <span style="color: #9e9e9e">--join</span> argument for all nodes and explicitly trigger the init command to bootstrap the cluster. If you forget to add the <span style="color: #9e9e9e">--join</span> argument, the node might act as if it were a single node cluster on reboot. 
 
-You should also consider using something like Consul Template to discover and configure your nodes as cattle. The roach1 node exposes the dashboard and sql server on port 8080 and 26257. The other nodes don't expose any ports to avoid clashes. In a production scenario you would expose port 8080 and 26257 and use a [load balancer](https://www.scaleway.com/en/docs/how-to-configure-a-cockroachdb-cluster/#-Configure-HAproxy) to distribute load across all nodes. The certificates are generated by the vault-init-client container and shared through a Docker volume (/cockroach-data/roachX). Certificates are read from the Docker volume.
+You should also consider using something like [Consul Template](https://github.com/hashicorp/consul-template) to discover and configure your nodes as cattle. The roach1 node exposes the dashboard and sql server on port 8080 and 26257. The other nodes don't expose any ports to avoid clashes. In a production scenario you would expose port 8080 and 26257 and use a [load balancer](https://www.scaleway.com/en/docs/how-to-configure-a-cockroachdb-cluster/#-Configure-HAproxy) to distribute load across all nodes. The certificates are generated by the vault-init-client container and shared through a Docker volume (/cockroach-data/roachX). Certificates are read from the Docker volume.
 
 **vault-init-client**
 
-A custom image based on the official Vault Docker container with jq and curl installed to simplify the extraction of certificates from vault API responses. This instance is responsible for using the Vault client to initialize and unseal the Vault server. Once unsealed it uses the root token to generate a CA, Intermediate CA and Digital Certificates for roach1, roach2, roach3 and roach-client. It shares the certificates with the other images through a shared Docker volume (/cockroach-data/roachX and /cockroach-data/roach-client).
+A custom image based on the official Vault Docker container with [jq](https://stedolan.github.io/jq/) and [curl](https://curl.haxx.se) installed to simplify the extraction of certificates from vault API responses. This instance is responsible for using the Vault client to initialize and unseal the Vault server. Once unsealed it uses the root token to generate a CA, Intermediate CA and Digital Certificates for roach1, roach2, roach3 and roach-client. It shares the certificates with the other images through a shared Docker volume (/cockroach-data/roachX and /cockroach-data/roach-client).
 
 Let's have a more detailed look at the init-certificate-chain.sh script which is used by the vault-init-client container.
 

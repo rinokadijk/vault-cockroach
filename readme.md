@@ -127,7 +127,8 @@ For a production-ready setup you should take at least the following into conside
 
 - Don't start the first node without a --join option. On reboot this node might go transition to a single node cluster.
 - Consider discovering your nodes in the cluster with a service discovery tool like [Consul](https://github.com/hashicorp/consul-template) instead of explicitly specifying the --join on all nodes  
-- Expose ports 26257 and 8080 on all cockroach nodes and use a loadbalancer 
+- Expose ports 26257 and 8080 on all cockroach nodes and use a loadbalancer
+- Follow the [production checklist](https://www.cockroachlabs.com/docs/stable/recommended-production-settings.html)
 
 ### Vault considerations
 For a production-ready setup you should take at least the following into consideration:
@@ -144,3 +145,4 @@ For a production-ready setup you should take at least the following into conside
 - You should revoke certificates that are not used anymore
 - Consider using an existing CA to sign your intermediate CA instead of generating one with Vault
 - Consider an extra layer of defense for the root and node certificates
+- Follow the [production checklist](https://learn.hashicorp.com/vault/operations/production-hardening)
