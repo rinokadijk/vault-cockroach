@@ -46,7 +46,7 @@ CRDB recommends using digital certificates to authenticate users. However, it is
 
 **A user accessing the Admin UI dashboard**
 
-![cockroachdb dashboard certificate in browser]({{ site.baseurl }}/assets/img/node1cert.gif)
+![cockroachdb dashboard certificate in browser]({{ site.baseurl }}/assets/img/nodecert.gif)
 
 The above image shows the certificate for the dashboard in a browser. The certificate is issued by "example Intermediate CA" and the common name is "node". The Subject Alternative Name (SAN) has the value "roach1". The domain name (localhost) doesn't match the SAN and the Intermediate CA is not trusted by the browser. Therefore the browser will show a warning when opening the dashboard. By default the dashboard can be accessed over an HTTPS connection on port [8080](https://localhost:8080). 
 
