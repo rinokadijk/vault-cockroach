@@ -103,7 +103,7 @@ You should also consider using something like [Consul Template](https://github.c
 
 A custom image based on the official Vault Docker container with [jq](https://stedolan.github.io/jq/) and [curl](https://curl.haxx.se) installed to simplify the extraction of certificates from vault API responses. This instance is responsible for using the Vault client to initialize and unseal the Vault server. Once unsealed it uses the root token to generate a CA, Intermediate CA and Digital Certificates for roach1, roach2, roach3 and roach-client. It shares the certificates with the other images through a shared Docker volume (/cockroach-data/roachX and /cockroach-data/roach-client).
 
-Let's have a more detailed look at the init-certificate-chain.sh script which is used by the vault-init-client container.
+Let's have a more detailed look at the [init-certificate-chain.sh](https://github.com/rinokadijk/vault-cockroach/blob/master/vault-client/init-certificate-chain.sh) script which is used by the vault-init-client container.
 
 The first step is to check if we should initialize and unseal Vault:
 
@@ -112,14 +112,14 @@ IS_INITIALIZED=$(vault status | grep Initialized | awk '{ print $2 }')
 IS_SEALED=$(vault status | grep Sealed | awk '{ print $2 }')
 ```
 
-The script assumes that a new chain of trust must be created when the Vault is initialized for the first time. Both initialising Vault and creating a new chain of trust should only be done once. To be able to create the chain of trust the PKI secrets engine must be enabled with a role that is allowed to enable the PKI backend:
+The script assumes that a new chain of trust must be created when the Vault is initialized for the first time. Both initializing Vault and creating a new chain of trust should only be done once. To be able to create the chain of trust the PKI secrets engine must be enabled with a role that is allowed to enable the PKI backend:
 
 ```bash
 vault login ${ROOT_TOKEN}
 vault secrets enable pki
 ```
 
-In a production setup a policy and an auth method should be created to restrict access. However, for this demo the root token is used for all of the Vault configuration. By default the PKI secrets engine is enabled at /pki. You might want to create a separate chain for nodes and SQL clients. The -path option allows you to specify a custom path (e.g. /pki/cockrach/nodes). Next we tune the secrets backend to expire everything within 10 years after issuing:
+In a production setup a [policy](https://learn.hashicorp.com/vault/identity-access-management/iam-policies) and an [auth method](https://www.vaultproject.io/api/auth/index.html) should be created to restrict access. However, for this demo the root token is used for all of the Vault configuration. By default the PKI secrets engine is enabled at /pki. You might want to create a separate chain for nodes and SQL clients. The -path option allows you to specify a custom path (e.g. /pki/cockrach/nodes). Next we tune the secrets backend to expire everything within 10 years after issuing:
 
 ```bash
 vault secrets tune -max-lease-ttl=87600h pki
@@ -253,4 +253,4 @@ echo | openssl s_client -connect localhost:26257 2>/dev/null | openssl x509 -noo
 ```
 
 ## Conclusion
-Modern cloud-native solutions like [Kubernetes](https://kubernetes.io/docs/concepts/cluster-administration/certificates/), [Istio](https://istio.io/docs/concepts/security/), [CRDB](https://www.cockroachlabs.com/docs/stable/create-security-certificates.html) and [Vault](https://www.vaultproject.io/docs/secrets/pki/index.html) use digital certificates for authentication. Short-lived certificates prevent bad certificates to continue to [live on for years](https://www.zdnet.com/article/google-wants-to-reduce-lifespan-for-https-certificates-to-one-year/) after being mississued and revoked. CRDB is designed to run in the cloud and be resilient to failures. Vault allows you to automate and manage certificates for CRDB. Hopefully the docker-compose example helps you getting started using digital certificates.
+Modern cloud-native solutions like [Kubernetes](https://kubernetes.io/docs/concepts/cluster-administration/certificates/), [Istio](https://istio.io/docs/concepts/security/), [CRDB](https://www.cockroachlabs.com/docs/stable/create-security-certificates.html) and [Vault](https://www.vaultproject.io/docs/secrets/pki/index.html) use digital certificates for authentication. Short-lived certificates prevent bad certificates to continue to [live on for years](https://www.zdnet.com/article/google-wants-to-reduce-lifespan-for-https-certificates-to-one-year/) after being mississued and revoked. CRDB is designed to run in the cloud and be resilient to failures. Vault allows you to automate and manage certificates for CRDB. Hopefully the docker-compose [example](https://github.com/rinokadijk/vault-cockroach) helps you getting started using digital certificates.
