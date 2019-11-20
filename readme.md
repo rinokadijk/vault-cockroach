@@ -79,7 +79,7 @@ docker-compose kill -s SIGHUP roach1 roach2 roach3
 Check the certificate dates with the following command:
 
 ```bash
-echo | openssl s_client -connect localhost:26257 2>/dev/null | openssl x509 -noout -dates
+openssl s_client -connect localhost:26257 2>/dev/null | openssl x509 -noout -dates
 ```
 
 ### Stop all docker instances
